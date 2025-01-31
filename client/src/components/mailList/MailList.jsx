@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { showToast } from "../../helpers/ToastHelper";
 
@@ -6,6 +6,13 @@ const MailList = () => {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [error, setError] = useState(null);
+
+  // Use useEffect to show toast when subscribed state changes
+  useEffect(() => {
+    if (subscribed) {
+      showToast("Subscribed", "success");
+    }
+  }, [subscribed]);
 
   const handleInputChange = (e) => {
     setEmail(e.target.value);
@@ -74,7 +81,6 @@ const MailList = () => {
           Subscribe
         </button>
       </form>
-      {subscribed && <>{showToast("Subscribed", "success")}</>}
       {error && (
         <p className="errorMessage text-red-500 mt-3">Error: {error}</p>
       )}
