@@ -117,7 +117,7 @@ const Header = ({ type }) => {
             </h1>
             <p className="text-lg mb-6">
               Get rewarded for your travels - unlock instant savings of 10% or
-              more with a free Lamabooking account
+              more with a free Mamabooking account
             </p>
             {!user && (
               <button
