@@ -10,6 +10,7 @@ const Register = () => {
     username: "",
     email: "",
     password: "",
+    role: "buyer", // Used for UI only
   });
   const [validationError, setValidationError] = useState(null);
   const [verificationToken, setVerificationToken] = useState("");
@@ -63,15 +64,23 @@ const Register = () => {
 
     dispatch({ type: "REGISTER_START" });
     try {
+      // Create registration data without the role field but with isAdmin
+      const registrationData = {
+        username: credentials.username,
+        email: credentials.email,
+        password: credentials.password,
+        isAdmin: credentials.role === "seller"  // This will be included in req.body
+      };
+
       const res = await axios.post(
         "http://localhost:8800/api/auth/register",
-        credentials
+        registrationData
       );
 
       dispatch({ type: "REGISTER_SUCCESS", payload: res.data });
       showToast(
         "success",
-        "Registration successful. Check your email for a verification code."
+        `Registration successful. ${credentials.role === "seller" ? "Seller" : "Buyer"} account created. Check your email for a verification code.`
       );
       setIsVerificationStep(true);
     } catch (err) {
@@ -132,6 +141,15 @@ const Register = () => {
                 value={credentials.password}
                 autoComplete="new-password"
               />
+              <select
+                id="role"
+                onChange={handleChange}
+                value={credentials.role}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="buyer">Buyer</option>
+                <option value="seller">Seller</option>
+              </select>
               <button
                 disabled={loading}
                 type="submit"
