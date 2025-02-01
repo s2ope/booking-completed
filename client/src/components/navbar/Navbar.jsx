@@ -12,18 +12,62 @@ import {
   Award,
   Bell,
   HelpCircle,
+  Check,
 } from "lucide-react";
 import { showToast } from "../../helpers/ToastHelper";
 
+// Logo Component
+const Logo = ({ className = "" }) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 400 100"
+      className={`h-9 w-auto ${className}`} // Taller than other elements
+      role="img"
+      aria-label="Mamabooking Logo"
+    >
+      <title>Mamabooking Logo</title>
+
+      {/* Square with more pronounced rounded corners like Booking.com */}
+      <rect x="20" y="15" width="65" height="65" rx="12" fill="#FFFFFF" />
+
+      {/* Bold M Letter */}
+      <text
+        x="35"
+        y="63"
+        fontFamily="Inter, system-ui, sans-serif"
+        fontWeight="900" // Extra bold
+        fontSize="45"
+        fill="#01357F"
+        letterSpacing="-1"
+      >
+        M
+      </text>
+
+      {/* Mamabooking Text - Bold and prominent */}
+      <text
+        x="100"
+        y="63"
+        fontFamily="Inter, system-ui, sans-serif"
+        fontWeight="900" // Extra bold
+        fontSize="44"
+        fill="#FFFFFF"
+        letterSpacing="-0.5" // Tighter letter spacing like Booking.com
+      >
+        Mamabooking
+      </text>
+    </svg>
+  );
+};
+
 const Navbar = () => {
-  const { user, dispatch } = useContext(AuthContext); // Accessing dispatch
+  const { user, dispatch } = useContext(AuthContext);
   const [isOpen, setIsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
 
   const handleLogout = () => {
-    dispatch({ type: "LOGOUT" }); // Dispatch the LOGOUT action
+    dispatch({ type: "LOGOUT" });
     showToast("Logged out successfully!", "success");
     setIsOpen(false);
   };
@@ -51,11 +95,7 @@ const Navbar = () => {
           {/* Logo Section */}
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="text-white font-bold text-lg">
-              <img
-                src="../assets/images/ss.png"
-                alt="logo"
-                className="w-64 h-auto"
-              />
+              <Logo />
             </Link>
           </div>
 
@@ -143,7 +183,6 @@ const Navbar = () => {
                     alt="Nepali Flag"
                     className="h-4 w-6 rounded hover:bg-[#214F9F]"
                   />
-
                   <HelpCircle className="h-6 w-6 text-white font-bold hover:bg-[#214F9F] p-0.5 m-1 rounded" />
                 </div>
                 <a
@@ -152,7 +191,6 @@ const Navbar = () => {
                 >
                   List Your Property
                 </a>
-
                 <Link
                   to="/register"
                   className="bg-white text-[#01357F] px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition-colors"
