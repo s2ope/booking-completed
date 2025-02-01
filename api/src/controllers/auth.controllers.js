@@ -74,7 +74,7 @@ export const verifyEmail = async (req, res, next) => {
       return res.status(400).send("Invalid token or user does not exist.");
     }
 
-    user.verified = true;
+    user.isEmailVerified = true;
     await user.save();
     res.status(200).send("Email verified successfully. You can now log in.");
   } catch (err) {
