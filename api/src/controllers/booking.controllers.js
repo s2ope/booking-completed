@@ -1,4 +1,5 @@
 import Booking from "../models/Booking.js";
+import mongoose from "mongoose";
 
 export const createBooking = async (req, res, next) => {
   // Convert string dates to Date objects
@@ -36,19 +37,20 @@ export const getUserBookings = async (req, res, next) => {
 
 export const getBooking = async (req, res, next) => {
   try {
-    console.log("Booking ID:", req.params.id);
-    const booking = await Booking.findById(req.params.id)
-      .populate("hotel")
-      .populate("rooms");
-
-    if (!booking) {
-      return res.status(404).json({ message: "Booking not found" });
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ success: false, message: "Invalid booking ID format" });
     }
 
-    res.status(200).json(booking);
-  } catch (err) {
-    next(err);
-  }
+    const booking = await Booking.findById(id);
+    if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    res.status(200).json({ success: true, data: booking });
+} catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+}
 };
 
 export const updateBookingStatus = async (req, res, next) => {

@@ -12,14 +12,18 @@ const API_KEY = import.meta.env.VITE_CLOUDINARY_API_URL;
 
 const NewHotel = () => {
   const [files, setFiles] = useState("");
-  const [info, setInfo] = useState({});
+  const [info, setInfo] = useState({ featured: false });
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const { data, loading, error } = useFetch("/api/rooms");
 
   const handleChange = (e) => {
-    setInfo((prev) => ({ ...prev, [e.target.id]: e.target.value }));
+    const { id, value } = e.target;
+    setInfo((prev) => ({
+      ...prev,
+      [id]: id === "featured" ? value === "true" : value, // Ensure boolean value for featured
+    }));
   };
 
   const handleSelect = (e) => {
@@ -31,7 +35,6 @@ const NewHotel = () => {
   };
 
   const validateForm = () => {
-    // Check if required hotel fields are filled
     for (const input of hotelInputs) {
       if (input.required && !info[input.id]) {
         showToast("error", `Please fill in ${input.label}`);
@@ -39,7 +42,6 @@ const NewHotel = () => {
       }
     }
 
-    // Check if at least one image is selected
     if (!files || !files.length) {
       showToast("error", "Please select at least one image");
       return false;
@@ -55,7 +57,6 @@ const NewHotel = () => {
 
     setIsLoading(true);
     try {
-      // Upload images
       const list = await Promise.all(
         Object.values(files).map(async (file) => {
           const data = new FormData();
@@ -72,23 +73,22 @@ const NewHotel = () => {
         })
       );
 
-      showToast("success", "Images uploaded successfully");
+      showToast("Images uploaded successfully");
 
       const newhotel = {
         ...info,
-        rooms: rooms.length > 0 ? rooms : [], // Include rooms only if selected
+        featured: info.featured ?? false, // Ensure featured defaults to false if not set
+        rooms: rooms.length > 0 ? rooms : [],
         photos: list,
       };
 
       const response = await axios.post("/api/hotels", newhotel);
       
       if (response.data) {
-        showToast("success", "Hotel has been created successfully");
-        // Reset form
+        showToast( "Hotel has been created successfully");
         setFiles("");
-        setInfo({});
+        setInfo({ featured: false });
         setRooms([]);
-        // Reset form inputs
         const formElement = e.target.closest('form');
         if (formElement) formElement.reset();
       }

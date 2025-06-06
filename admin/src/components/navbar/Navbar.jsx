@@ -16,8 +16,6 @@ const Navbar = () => {
     <div className="navbar">
       <div className="wrapper">
         <div className="search">
-          <input type="text" placeholder="Search..." />
-          <SearchOutlinedIcon />
         </div>
         <div className="items">
           <div className="item">
@@ -31,18 +29,12 @@ const Navbar = () => {
             />
           </div>
           <div className="item">
-            <FullscreenExitOutlinedIcon className="icon" />
-          </div>
-          <div className="item">
             <NotificationsNoneOutlinedIcon className="icon" />
             <div className="counter">1</div>
           </div>
           <div className="item">
             <ChatBubbleOutlineOutlinedIcon className="icon" />
             <div className="counter">2</div>
-          </div>
-          <div className="item">
-            <ListOutlinedIcon className="icon" />
           </div>
           <div className="item">
             <img
@@ -56,5 +48,4 @@ const Navbar = () => {
     </div>
   );
 };
-
 export default Navbar;

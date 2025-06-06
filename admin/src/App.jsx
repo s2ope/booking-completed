@@ -3,7 +3,7 @@ import Login from "./pages/login/Login";
 import List from "./pages/list/List";
 import Single from "./pages/single/Single";
 import New from "./pages/new/New";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter,Routes, Route, Navigate } from "react-router-dom";
 import { productInputs, userInputs } from "./formSource";
 import "./style/dark.scss";
 import { useContext } from "react";
@@ -53,13 +53,17 @@ function App() {
                 }
               />
               <Route
-                path=":userId"
-                element={
+                  path="/users/:id"
+                  element={
                   <ProtectedRoute>
                     <Single />
                   </ProtectedRoute>
-                }
+                  }
               />
+
+        
+
+
               <Route
                 path="new"
                 element={
@@ -78,6 +82,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/hotels/:id"
+                element={
+                  <ProtectedRoute>
+                    <Single />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route
                 path=":productId"
                 element={
@@ -104,6 +117,16 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+                 
+            <Route
+                path="/rooms/:id"
+                element={
+                  <ProtectedRoute>
+                    <Single />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route
                 path=":productId"
                 element={

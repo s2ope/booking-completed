@@ -75,8 +75,6 @@ const Navbar = () => {
   const menuItems = [
     { icon: BookOpen, label: "My Bookings", path: "/my-bookings" },
     { icon: User, label: "My Account", path: "/my-account" },
-    { icon: CreditCard, label: "Bookings & Trips", path: "/bookings-trips" },
-    { icon: Award, label: "Rewards & Wallet", path: "/rewards-wallet" },
     { icon: Bookmark, label: "Saved", path: "/saved" },
   ];
 

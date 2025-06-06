@@ -59,7 +59,7 @@ const New = ({ inputs, title }) => {
         try {
           const uploadRes = await axios.post(API_KEY, data);
           imageUrl = uploadRes.data.url;
-          showToast("success", "Image uploaded successfully");
+          showToast( "Image uploaded successfully");
         } catch (error) {
           showToast("error", "Failed to upload image");
           console.error("Image upload error:", error);
@@ -76,7 +76,7 @@ const New = ({ inputs, title }) => {
       const response = await axios.post("/api/auth/register", newUser);
       
       if (response.data) {
-        showToast("success", "User registered successfully");
+        showToast( "User registered successfully");
         // Reset form
         setFile("");
         setInfo({});

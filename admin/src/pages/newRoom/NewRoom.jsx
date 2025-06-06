@@ -55,7 +55,7 @@ const NewRoom = () => {
         .filter((room) => room.number); // Remove empty entries
 
       await axios.post(`/api/rooms/${hotelId}`, { ...info, roomNumbers });
-      showToast("success", "Room has been created successfully");
+      showToast( "Room has been created successfully","success");
       
       // Reset form
       setInfo({});

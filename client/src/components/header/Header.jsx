@@ -65,49 +65,7 @@ const Header = ({ type }) => {
           type === "list" ? "my-5" : "mt-5 mb-[100px]"
         }`}
       >
-        {/* Navigation List */}
-        <div className="flex flex-wrap gap-8 mb-[50px]">
-          {[
-            { icon: faBed, text: "Stays", section: "destination", path: "/" },
-            {
-              icon: faPlane,
-              text: "Flights",
-              section: "flights",
-              path: "/flights",
-            },
-            {
-              icon: faCar,
-              text: "Car rentals",
-              section: "carRentals",
-              path: "/carRentals",
-            },
-            {
-              icon: faOtter,
-              text: "Attractions",
-              section: "attractions",
-              path: "/attractions",
-            },
-            {
-              icon: faTaxi,
-              text: "Airport taxis",
-              section: "airportTaxis",
-              path: "/airportTaxis",
-            },
-          ].map((item) => (
-            <div
-              key={item.section}
-              className={`flex items-center gap-2 cursor-pointer transition-colors ${
-                activeSection === item.section
-                  ? "border border-white px-4 py-2 rounded-full"
-                  : ""
-              }`}
-              onClick={() => handleSectionClick(item.section, item.path)}
-            >
-              <FontAwesomeIcon icon={item.icon} />
-              <span>{item.text}</span>
-            </div>
-          ))}
-        </div>
+      
 
         {/* Content */}
         {type !== "list" && (

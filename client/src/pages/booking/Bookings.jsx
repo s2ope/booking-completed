@@ -162,11 +162,11 @@ const MyBookings = () => {
                 <div className="flex space-x-4">
                   <button
                     className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                    onClick={() => navigate(`/bookings/${booking._id}`)}
+                    onClick={() => navigate(`/my-bookings/${booking._id}`)}
                   >
                     View Details
                   </button>
-                  {booking.status === "confirmed" && (
+                  {booking.status === "pending" && (
                     <button
                       className={`${
                         cancelingBookingId === booking._id

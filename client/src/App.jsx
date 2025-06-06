@@ -10,6 +10,7 @@ import ResetPassword from "./pages/reset/Reset";
 import EnterResetCode from "./pages/resetCode/EnterResetCode";
 import NotFoundPage from "./pages/notFound/notFound";
 import MyBookings from "./pages/booking/Bookings";
+import BookingDetails from "./pages/bookingDetails/bookingDetails";
 
 function App() {
   return (
@@ -20,7 +21,7 @@ function App() {
         <Route path="/hotels" element={<List />} />
         <Route path="/hotels/:id" element={<Hotel />} />
         <Route path="/my-bookings" element={<MyBookings />} />
-        <Route path="/my-bookings/:id" element={<MyBookings />} />
+        <Route path="/my-bookings/:id" element={<BookingDetails />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<ResetPassword />} />
