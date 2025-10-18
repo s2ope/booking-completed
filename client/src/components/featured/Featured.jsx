@@ -1,8 +1,6 @@
 import React from "react";
 import useFetch from "../../hooks/useFetch";
-import dotenv from "dotenv";
 
-dotenv.config();
 const Featured = () => {
   const { data, loading, error } = useFetch(
     `${process.env.REACT_APP_API_URL}/api/hotels/countByCity?cities=berlin,madrid,london`
