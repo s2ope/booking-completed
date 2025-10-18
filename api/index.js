@@ -29,18 +29,19 @@ mongoose
 
 // Middleware
 // Allow your deployed frontend sites to talk to your backend
-app.use(
-  cors({
-    origin: [
-      "https://mern-client-iota.vercel.app/", // your client React site
-      "https://mern-admin-ten.vercel.app/login", // your admin React site
-    ],
-    credentials: true,
-  })
-);
-
+app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
+
+// ✅ Test route for the root URL (so / won't show 404)
+app.get("/", (req, res) => {
+  res.send("Backend working successfully on Render with ES modules!");
+});
+
+// ✅ Example API route
+app.get("/api/test", (req, res) => {
+  res.json({ message: "API test successful" });
+});
 
 // Chat system
 io.on("connection", (socket) => {
