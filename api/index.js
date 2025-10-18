@@ -32,8 +32,8 @@ mongoose
 app.use(
   cors({
     origin: [
-      "https://your-client.vercel.app", // your client React site
-      "https://your-admin.vercel.app", // your admin React site
+      "https://mern-client-iota.vercel.app/", // your client React site
+      "https://mern-admin-ten.vercel.app/login", // your admin React site
     ],
     credentials: true,
   })
