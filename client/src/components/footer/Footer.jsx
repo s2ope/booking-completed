@@ -1,3 +1,4 @@
+
 import React from "react";
 
 const Footer = () => {
@@ -63,41 +64,40 @@ const Footer = () => {
       <div className="fText text-center">
         <p>Copyright © {currentYear} Mamabooking. All rights reserved.</p>
       </div>
-      <div className="imageContainer flex justify-center space-x-4">
+ <div className="imageContainer flex justify-center space-x-4 mt-4">
         <div className="imageItem text-center">
           <img
-            src="../assets/images/l1.png"
-            alt="Image 1"
-            className="mx-auto w-12 h-auto"
+            src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=48&h=48&fit=crop&crop=center"
+            alt="Priceline"
+            className="mx-auto w-12 h-12 object-cover rounded bg-white p-1"
           />
         </div>
         <div className="imageItem text-center">
           <img
-            src="../assets/images/l2.png"
-            alt="Image 2"
-            className="mx-auto w-12 h-auto"
-          />
-        </div>
-        {/* Add more images as needed */}
-        <div className="imageItem text-center">
-          <img
-            src="../assets/images/l3.jpg"
-            alt="Image 3"
-            className="mx-auto w-12 h-auto"
+            src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=48&h=48&fit=crop&crop=center"
+            alt="Kayak"
+            className="mx-auto w-12 h-12 object-cover rounded bg-white p-1"
           />
         </div>
         <div className="imageItem text-center">
           <img
-            src="../assets/images/l4.png"
-            alt="Image 4"
-            className="mx-auto w-12 h-auto"
+            src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=48&h=48&fit=crop&crop=center"
+            alt="Agoda"
+            className="mx-auto w-12 h-12 object-cover rounded bg-white p-1"
           />
         </div>
         <div className="imageItem text-center">
           <img
-            src="../assets/images/l5.png"
-            alt="Image 5"
-            className="mx-auto w-12 h-auto"
+            src="https://images.unsplash.com/photo-1556388158-158ea5ccacbd?w=48&h=48&fit=crop&crop=center"
+            alt="Rentalcars"
+            className="mx-auto w-12 h-12 object-cover rounded bg-white p-1"
+          />
+        </div>
+        <div className="imageItem text-center">
+          <img
+            src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=48&h=48&fit=crop&crop=center"
+            alt="OpenTable"
+            className="mx-auto w-12 h-12 object-cover rounded bg-white p-1"
           />
         </div>
       </div>
@@ -106,3 +106,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

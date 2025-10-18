@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
 
 const BookingDetails = () => {
   const { id } = useParams();
@@ -10,7 +10,7 @@ const BookingDetails = () => {
   const [updating, setUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
-  console.log("Booking ID:", id); 
+  console.log("Booking ID:", id);
 
   useEffect(() => {
     fetchBookingDetails();
@@ -18,7 +18,9 @@ const BookingDetails = () => {
 
   const fetchBookingDetails = async () => {
     try {
-      const response = await axios.get(`http://localhost:8800/api/bookings/${id}`);
+      const response = await axios.get(
+        `http://localhost:8800/api/bookings/${id}`
+      );
       setBooking(response.data.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch booking");
@@ -33,9 +35,12 @@ const BookingDetails = () => {
 
     setUpdating(true);
     setUpdateSuccess(false);
-    
+
     try {
-      const response = await axios.put(`http://localhost:8800/api/bookings/${id}`, { status: newStatus });
+      const response = await axios.put(
+        `http://localhost:8800/api/bookings/${id}`,
+        { status: newStatus }
+      );
 
       setBooking(response.data.data);
       setUpdateSuccess(true);
@@ -67,7 +72,7 @@ const BookingDetails = () => {
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">
         Booking Details
       </h2>
-      
+
       {booking && (
         <div className="bg-white rounded-lg shadow p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -76,7 +81,7 @@ const BookingDetails = () => {
                 User
               </label>
               <span className="text-gray-800">
-                {booking.user?.name || 'N/A'} ({booking.user?.email})
+                {booking.user?.name || "N/A"} ({booking.user?.email})
               </span>
             </div>
 
@@ -85,7 +90,7 @@ const BookingDetails = () => {
                 Hotel
               </label>
               <span className="text-gray-800">
-                {booking.hotel?.name || 'N/A'}
+                {booking.hotel?.name || "N/A"}
               </span>
             </div>
 
@@ -94,7 +99,7 @@ const BookingDetails = () => {
                 Rooms
               </label>
               <span className="text-gray-800">
-                {booking.rooms?.map(room => room.name).join(', ') || 'N/A'}
+                {booking.rooms?.map((room) => room.name).join(",") || "N/A"}
               </span>
             </div>
 
@@ -103,7 +108,8 @@ const BookingDetails = () => {
                 Stay Duration
               </label>
               <span className="text-gray-800">
-                {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+                {new Date(booking.startDate).toLocaleDateString()} -{" "}
+                {new Date(booking.endDate).toLocaleDateString()}
               </span>
             </div>
 
@@ -118,9 +124,7 @@ const BookingDetails = () => {
               <label className="block text-sm font-medium text-gray-600 mb-1">
                 Status
               </label>
-              <span className="capitalize text-gray-800">
-                {booking.status}
-              </span>
+              <span className="capitalize text-gray-800">{booking.status}</span>
             </div>
           </div>
 
@@ -129,7 +133,7 @@ const BookingDetails = () => {
               Update Status
             </label>
             <div className="flex items-center gap-4">
-              <select 
+              <select
                 onChange={updateStatus}
                 disabled={updating}
                 defaultValue={booking.status}

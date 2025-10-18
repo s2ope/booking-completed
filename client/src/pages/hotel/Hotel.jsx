@@ -5,11 +5,13 @@ import {
   faCircleXmark,
   faLocationDot,
 } from "@fortawesome/free-solid-svg-icons";
+
 import { useContext, useState } from "react";
 import useFetch from "../../hooks/useFetch";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { SearchContext } from "../../context/SearchContext";
 import { AuthContext } from "../../context/AuthContext";
+
 import Reserve from "../../components/reserve/Reserve";
 import Navbar from "../../components/navbar/Navbar";
 import Header from "../../components/header/Header";
