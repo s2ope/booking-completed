@@ -1,41 +1,42 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
-/**
- * useFetch hook
- * @param {string} url - endpoint path (starts with /api/...)
- * Example: useFetch("/api/hotels/countByCity?cities=berlin,madrid,london")
- */
 const useFetch = (url) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+
+  // Prepend backend URL if environment variable exists
+  const baseURL = process.env.REACT_APP_API_URL || ""; // fallback to empty string
+
+  const fullURL = `${baseURL}${url}`; // full URL for axios
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      setError(false);
       try {
-        const baseURL = process.env.REACT_APP_API_URL;
-        if (!baseURL) {
-          throw new Error(
-            "REACT_APP_API_URL is undefined. Check your .env or Vercel env variables."
-          );
-        }
-
-        const res = await axios.get(`${baseURL}${url}`);
+        const res = await axios.get(fullURL);
         setData(res.data);
       } catch (err) {
-        console.error("Fetch error:", err);
-        setError(true);
+        setError(err);
       }
       setLoading(false);
     };
-
     fetchData();
-  }, [url]);
+  }, [fullURL]);
 
-  return { data, loading, error };
+  const reFetch = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(fullURL);
+      setData(res.data);
+    } catch (err) {
+      setError(err);
+    }
+    setLoading(false);
+  };
+
+  return { data, loading, error, reFetch };
 };
 
 export default useFetch;
