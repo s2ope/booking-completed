@@ -8,7 +8,7 @@ const useFetch = (url) => {
 
   // ✅ Automatically choose backend based on environment
   const baseURL = import.meta.env.DEV
-    ? "[http://localhost:8800](http://localhost:8800)" // local backend during development
+    ? "http://localhost:8800" // local backend during development
     : import.meta.env.VITE_API_URL || ""; // production backend from .env
 
   // ✅ Ensure there’s exactly one slash between baseURL and url
