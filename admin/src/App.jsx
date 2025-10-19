@@ -3,15 +3,19 @@ import Login from "./pages/login/Login";
 import List from "./pages/list/List";
 import Single from "./pages/single/Single";
 import New from "./pages/new/New";
-import { BrowserRouter,Routes, Route, Navigate } from "react-router-dom";
+import NewHotel from "./pages/newHotel/NewHotel";
+import NewRoom from "./pages/newRoom/NewRoom";
+
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { productInputs, userInputs } from "./formSource";
 import "./style/dark.scss";
 import { useContext } from "react";
+
 import { DarkModeContext } from "./context/darkModeContext";
 import { AuthContext } from "./context/AuthContext";
+
 import { hotelColumns, roomColumns, userColumns } from "./datatablesource";
-import NewHotel from "./pages/newHotel/NewHotel";
-import NewRoom from "./pages/newRoom/NewRoom";
+
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -53,16 +57,13 @@ function App() {
                 }
               />
               <Route
-                  path="/users/:id"
-                  element={
+                path="/users/:id"
+                element={
                   <ProtectedRoute>
                     <Single />
                   </ProtectedRoute>
-                  }
+                }
               />
-
-        
-
 
               <Route
                 path="new"
@@ -117,8 +118,8 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-                 
-            <Route
+
+              <Route
                 path="/rooms/:id"
                 element={
                   <ProtectedRoute>

@@ -9,7 +9,8 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/api": {
-        target: "http://localhost:8800", // Your backend URL
+        target:
+          "https://mern-backend-j4gu.onrender.com/" || "http://localhost:8800", // Your backend URL
         changeOrigin: true,
         secure: false, // Set to true if using HTTPS in your backend
       },
