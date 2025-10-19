@@ -4,7 +4,7 @@ import useFetch from "../../hooks/useFetch";
 const Featured = () => {
   // Use relative URL; hook prepends backend base URL automatically
   const { data, loading, error } = useFetch(
-    "/api/hotels/countByCity?cities=berlin,madrid,london"
+    "https://mern-backend-j4gu.onrender.com/api/hotels/countByCity?cities=berlin,madrid,london"
   );
 
   const cities = [
