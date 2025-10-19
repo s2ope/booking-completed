@@ -7,7 +7,7 @@ const useFetch = (url) => {
   const [error, setError] = useState(false);
 
   // Prepend backend URL if environment variable exists
-  const baseURL = process.env.REACT_APP_API_URL || ""; // fallback to empty string
+  const baseURL = import.meta.env.VITE_API_URL || "";
 
   const fullURL = `${baseURL}${url}`; // full URL for axios
 
