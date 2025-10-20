@@ -27,9 +27,7 @@ const useFetch = (url) => {
       }
     };
 
-    ```
-fetchData();
-```;
+    fetchData();
   }, [fullURL]);
 
   // Manual re-fetch option
