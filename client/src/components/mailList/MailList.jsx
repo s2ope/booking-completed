@@ -35,7 +35,7 @@ const MailList = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:8800/api/subscribe", {
+      const response = await axios.post("/api/subscribe", {
         email,
       });
       setSubscribed(true);

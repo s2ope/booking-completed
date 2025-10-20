@@ -92,7 +92,7 @@ const Reserve = ({ setOpen, hotelId }) => {
       // Update room availability
       await Promise.all(
         selectedRooms.map((roomId) =>
-          axios.put(`http://localhost:8800/api/rooms/availability/${roomId}`, {
+          axios.put(`/api/rooms/availability/${roomId}`, {
             dates: alldates,
           })
         )
@@ -110,10 +110,7 @@ const Reserve = ({ setOpen, hotelId }) => {
       };
 
       // Save booking to database
-      await axios.post(
-        "http://localhost:8800/api/bookings/create",
-        bookingData
-      );
+      await axios.post("/api/bookings/create", bookingData);
 
       // Close modal and navigate
       setOpen(false);
