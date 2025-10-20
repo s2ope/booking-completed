@@ -22,12 +22,9 @@ const EnterResetCode = () => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:8800/api/auth/verify-reset-code",
-        {
-          token: resetCode,
-        }
-      );
+      const response = await axios.post("/api/auth/verify-reset-code", {
+        token: resetCode,
+      });
 
       if (response.status === 200) {
         navigate(`/reset-password?code=${resetCode}`);

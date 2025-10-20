@@ -24,9 +24,7 @@ const List = () => {
   const [max, setMax] = useState(undefined);
 
   const { data, loading, error, reFetch } = useFetch(
-    `http://localhost:8800/api/hotels?city=${searchDestination}&min=${
-      min || 0
-    }&max=${max || 999}`
+    `/api/hotels?city=${searchDestination}&min=${min || 0}&max=${max || 999}`
   );
 
   useEffect(() => {
@@ -53,7 +51,7 @@ const List = () => {
 
   const handleSearch = async (e) => {
     if (e) e.preventDefault(); // Prevent form submission if it's from a form
-    
+
     if (!validateSearch()) return;
 
     try {
@@ -74,12 +72,12 @@ const List = () => {
   const handleOptionChange = (optionType, value) => {
     // Convert value to number
     const numValue = Number(value);
-    
+
     if (numValue < 0) {
       showToast("Value cannot be negative", "warning");
       return;
     }
-    
+
     setSearchOptions({
       ...searchOptions,
       [optionType]: numValue,
@@ -89,8 +87,8 @@ const List = () => {
   // Handle price input changes
   const handlePriceChange = (setter) => (e) => {
     // Only allow numbers
-    const value = e.target.value.replace(/[^0-9]/g, '');
-    setter(value === '' ? undefined : Number(value));
+    const value = e.target.value.replace(/[^0-9]/g, "");
+    setter(value === "" ? undefined : Number(value));
   };
 
   const OptionInput = ({ label, value, onChange, min = 0, helpText }) => (
@@ -179,30 +177,32 @@ const List = () => {
                   <div className="bg-white rounded p-3 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-700">
-                        Min price <small className="text-gray-500">(per night)</small>
+                        Min price{" "}
+                        <small className="text-gray-500">(per night)</small>
                       </span>
                       <input
                         type="text"
                         className="w-16 p-1 border border-gray-300 rounded text-right"
                         placeholder="$"
-                        value={min || ''}
+                        value={min || ""}
                         onChange={handlePriceChange(setMin)}
                       />
                     </div>
-                    
+
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-700">
-                        Max price <small className="text-gray-500">(per night)</small>
+                        Max price{" "}
+                        <small className="text-gray-500">(per night)</small>
                       </span>
                       <input
                         type="text"
                         className="w-16 p-1 border border-gray-300 rounded text-right"
                         placeholder="$"
-                        value={max || ''}
+                        value={max || ""}
                         onChange={handlePriceChange(setMax)}
                       />
                     </div>
-                    
+
                     <OptionInput
                       label="Adults"
                       value={searchOptions.adult}
@@ -212,7 +212,9 @@ const List = () => {
                     <OptionInput
                       label="Children"
                       value={searchOptions.children}
-                      onChange={(value) => handleOptionChange("children", value)}
+                      onChange={(value) =>
+                        handleOptionChange("children", value)
+                      }
                     />
                     <OptionInput
                       label="Rooms"
@@ -246,9 +248,7 @@ const List = () => {
             ) : (
               <div className="space-y-4">
                 {data && data.length > 0 ? (
-                  data.map((item) => (
-                    <SearchItem key={item._id} item={item} />
-                  ))
+                  data.map((item) => <SearchItem key={item._id} item={item} />)
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     No hotels found. Try adjusting your search criteria.

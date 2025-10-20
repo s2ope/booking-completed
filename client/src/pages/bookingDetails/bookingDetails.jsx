@@ -18,9 +18,7 @@ const BookingDetails = () => {
 
   const fetchBookingDetails = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:8800/api/bookings/${id}`
-      );
+      const response = await axios.get(`/api/bookings/${id}`);
       setBooking(response.data.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch booking");
@@ -37,10 +35,9 @@ const BookingDetails = () => {
     setUpdateSuccess(false);
 
     try {
-      const response = await axios.put(
-        `http://localhost:8800/api/bookings/${id}`,
-        { status: newStatus }
-      );
+      const response = await axios.put(`/api/bookings/${id}`, {
+        status: newStatus,
+      });
 
       setBooking(response.data.data);
       setUpdateSuccess(true);

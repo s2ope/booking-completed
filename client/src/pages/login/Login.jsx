@@ -43,10 +43,7 @@ const Login = () => {
     if (!validateInputs()) return;
     dispatch({ type: "LOGIN_START" });
     try {
-      const res = await axios.post(
-        "http://localhost:8800/api/auth/login",
-        credentials
-      );
+      const res = await axios.post("/api/auth/login", credentials);
       dispatch({ type: "LOGIN_SUCCESS", payload: res.data.details });
       localStorage.setItem("token", res.data.token);
       showToast("Login successful!", "success");
@@ -64,7 +61,7 @@ const Login = () => {
       return;
     }
     try {
-      await axios.post("http://localhost:8800/api/auth/forgot-password", {
+      await axios.post("/api/auth/forgot-password", {
         email,
       });
       showToast("Reset link sent! Check your email.", "success");

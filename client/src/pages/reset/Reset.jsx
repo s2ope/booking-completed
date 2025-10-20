@@ -46,13 +46,10 @@ const ResetPassword = () => {
 
     try {
       const token = searchParams.get("code");
-      const response = await axios.post(
-        "http://localhost:8800/api/auth/reset-password",
-        {
-          token,
-          password: newPassword,
-        }
-      );
+      const response = await axios.post("/api/auth/reset-password", {
+        token,
+        password: newPassword,
+      });
 
       if (response.status === 200) {
         showToast("Password reset successful! Redirecting to login...");

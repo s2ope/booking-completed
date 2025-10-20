@@ -91,10 +91,9 @@ const Register = () => {
   const handleVerification = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        "http://localhost:8800/api/auth/verify-email",
-        { token: verificationToken }
-      );
+      const res = await axios.post("/api/auth/verify-email", {
+        token: verificationToken,
+      });
       showToast("success", res.data);
       navigate("/login");
     } catch (err) {
