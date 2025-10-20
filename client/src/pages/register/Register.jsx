@@ -69,18 +69,17 @@ const Register = () => {
         username: credentials.username,
         email: credentials.email,
         password: credentials.password,
-        isAdmin: credentials.role === "seller"  // This will be included in req.body
+        isAdmin: credentials.role === "seller", // This will be included in req.body
       };
 
-      const res = await axios.post(
-        "http://localhost:8800/api/auth/register",
-        registrationData
-      );
+      const res = await axios.post("api/auth/register", registrationData);
 
       dispatch({ type: "REGISTER_SUCCESS", payload: res.data });
       showToast(
         "success",
-        `Registration successful. ${credentials.role === "seller" ? "Seller" : "Buyer"} account created. Check your email for a verification code.`
+        `Registration successful. ${
+          credentials.role === "seller" ? "Seller" : "Buyer"
+        } account created. Check your email for a verification code.`
       );
       setIsVerificationStep(true);
     } catch (err) {

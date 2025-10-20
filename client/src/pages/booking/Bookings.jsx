@@ -29,14 +29,11 @@ const MyBookings = () => {
 
         // console.log("Logged in User ID:", userId); // Debug log
 
-        const response = await axios.get(
-          "http://localhost:8800/api/bookings/get",
-          {
-            headers: {
-              Authorization: `Bearer ${user}`,
-            },
-          }
-        );
+        const response = await axios.get("/api/bookings/get", {
+          headers: {
+            Authorization: `Bearer ${user}`,
+          },
+        });
 
         // console.log("Bookings Response:", response.data); // Debug log
 
@@ -69,7 +66,7 @@ const MyBookings = () => {
         return;
       }
       const response = await axios.patch(
-        `http://localhost:8800/api/bookings/${bookingId}`,
+        `/api/bookings/${bookingId}`,
         {},
         {
           headers: {
