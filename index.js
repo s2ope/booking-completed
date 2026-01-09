@@ -14,6 +14,8 @@ import subscribeRoute from "./src/controllers/email.controller.js";
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // MongoDB connection
 const MONGO_URI = process.env.MONGO;
@@ -46,3 +48,4 @@ const PORT = process.env.PORT || 8800;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
