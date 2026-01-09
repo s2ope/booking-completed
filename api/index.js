@@ -34,9 +34,18 @@ mongoose
 
 // Middleware
 // Allow your deployed frontend sites to talk to your backend
-app.use(cors());
+
+// CORS config
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173", // local frontend during dev
+      "https://mern-backend-j4gu.onrender.com", // Render frontend
+    ],
+    credentials: true,
+  })
+);
 app.use(cookieParser());
-app.use(express.json());
 
 // ✅ Test route for the root URL (so / won't show 404)
 app.get("/", (req, res) => {
@@ -83,9 +92,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Something went wrong!" });
 });
 // console.log("MONGO_URI:", process.env.MONGO);
+console.log("API URL:", baseURL);
 
 const PORT = process.env.PORT || 8800;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-

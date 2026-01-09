@@ -1,4 +1,4 @@
-import axios from "axios";
+import { api } from "../..";
 import { useContext, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
@@ -43,7 +43,7 @@ const Login = () => {
     if (!validateInputs()) return;
     dispatch({ type: "LOGIN_START" });
     try {
-      const res = await axios.post("/api/auth/login", credentials);
+      const res = await api.post("/auth/login", credentials);
       dispatch({ type: "LOGIN_SUCCESS", payload: res.data.details });
       localStorage.setItem("token", res.data.token);
       showToast("Login successful!", "success");
@@ -61,7 +61,7 @@ const Login = () => {
       return;
     }
     try {
-      await axios.post("/api/auth/forgot-password", {
+      await api.post("/auth/forgot-password", {
         email,
       });
       showToast("Reset link sent! Check your email.", "success");

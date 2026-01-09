@@ -1,5 +1,5 @@
+import { api } from "../../api/axios";
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navbar/Navbar";
@@ -29,7 +29,7 @@ const MyBookings = () => {
 
         // console.log("Logged in User ID:", userId); // Debug log
 
-        const response = await axios.get("/api/bookings/get", {
+        const response = await api.get("/api/bookings/get", {
           headers: {
             Authorization: `Bearer ${user}`,
           },
@@ -65,7 +65,7 @@ const MyBookings = () => {
         showToast("Authorization token is missing", "error");
         return;
       }
-      const response = await axios.patch(
+      const response = await api.patch(
         `/api/bookings/${bookingId}`,
         {},
         {
