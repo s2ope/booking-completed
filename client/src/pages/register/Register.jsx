@@ -72,7 +72,9 @@ const Register = () => {
         isAdmin: credentials.role === "seller", // This will be included in req.body
       };
 
-      const res = await axios.post("api/auth/register", registrationData);
+      // console.log("URL:", process.env.REACT_APP_URL);
+
+      const res = await axios.post(`/api/auth/register`, registrationData);
 
       dispatch({ type: "REGISTER_SUCCESS", payload: res.data });
       showToast(
@@ -83,8 +85,13 @@ const Register = () => {
       );
       setIsVerificationStep(true);
     } catch (err) {
-      dispatch({ type: "REGISTER_FAILURE", payload: err.response.data });
-      showToast("error", err.response.data);
+      const message =
+        err.response?.data ||
+        err.message ||
+        "Registration failed. Please try again.";
+
+      dispatch({ type: "REGISTER_FAILURE", payload: message });
+      showToast("error", message);
     }
   };
 

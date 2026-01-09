@@ -23,7 +23,9 @@ const io = new Server(server);
 const MONGO_URI = process.env.MONGO;
 
 mongoose
-  .connect(MONGO_URI)
+  .connect(MONGO_URI, {
+    family: 4, // forces IPv4 instead of IPv6
+  })
   .then(() => console.log("Connected to MongoDB"))
   .catch((error) => console.error("Error connecting to MongoDB:", error));
 
