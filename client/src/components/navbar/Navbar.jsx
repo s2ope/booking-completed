@@ -176,11 +176,7 @@ const Navbar = () => {
                   <span className="px-3 py-1.5 rounded text-white font-bold hover:bg-[#214F9F]">
                     NPR
                   </span>
-                  <img
-                    src="../assets/images/WavingFlag.gif"
-                    alt="Nepali Flag"
-                    className="h-4 w-6 rounded hover:bg-[#214F9F]"
-                  />
+
                   <HelpCircle className="h-6 w-6 text-white font-bold hover:bg-[#214F9F] p-0.5 m-1 rounded" />
                 </div>
                 <a
