@@ -16,6 +16,9 @@ import subscribeRoute from "./src/controllers/email.controller.js";
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const server = createServer(app);
 const io = new Server(server);
 
@@ -85,3 +88,4 @@ const PORT = process.env.PORT || 8800;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
