@@ -41,7 +41,7 @@ export const register = async (req, res, next) => {
       to: newUser.email,
       subject: "Email Verification",
       text: `Please verify your email by clicking on the following link: 
-      http://localhost:8800/api/auth/verify-email?token=${verificationToken}`,
+      https://mern-backend-j4gu.onrender.com/api/auth/verify-email?token=${verificationToken}`,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
@@ -139,7 +139,7 @@ export const resetPasswordRequest = async (req, res, next) => {
       to: user.email,
       subject: "Password Reset",
       text: `To reset your password, please click the following link: 
-      http://localhost:8800/api/auth/reset-password?token=${resetToken}`,
+      https://mern-backend-j4gu.onrender.com/api/auth/reset-password?token=${resetToken}`,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
