@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import { api } from "../../api/axios.js";
 
 const BookingDetails = () => {
   const { id } = useParams();
@@ -18,7 +18,7 @@ const BookingDetails = () => {
 
   const fetchBookingDetails = async () => {
     try {
-      const response = await axios.get(`/api/bookings/${id}`);
+      const response = await api.get(`/api/bookings/${id}`);
       setBooking(response.data.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch booking");
@@ -35,7 +35,7 @@ const BookingDetails = () => {
     setUpdateSuccess(false);
 
     try {
-      const response = await axios.put(`/api/bookings/${id}`, {
+      const response = await api.put(`/api/bookings/${id}`, {
         status: newStatus,
       });
 

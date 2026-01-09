@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { api } from "../../api/axios.js";
+
 import { showToast } from "../../helpers/ToastHelper";
 
 const EnterResetCode = () => {
@@ -22,7 +23,7 @@ const EnterResetCode = () => {
     }
 
     try {
-      const response = await axios.post("/api/auth/verify-reset-code", {
+      const response = await api.post("/api/auth/verify-reset-code", {
         token: resetCode,
       });
 

@@ -1,4 +1,5 @@
-import axios from "axios";
+import { api } from "../../api/axios.js";
+
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { showToast } from "../../helpers/ToastHelper";
@@ -46,7 +47,7 @@ const ResetPassword = () => {
 
     try {
       const token = searchParams.get("code");
-      const response = await axios.post("/api/auth/reset-password", {
+      const response = await api.post("/api/auth/reset-password", {
         token,
         password: newPassword,
       });

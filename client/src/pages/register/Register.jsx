@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import Navbar from "../../components/navbar/Navbar";
 import { showToast } from "../../helpers/ToastHelper";
-import axios from "axios";
+import { api } from "../../api/axios.js";
 
 const Register = () => {
   const [credentials, setCredentials] = useState({
@@ -74,7 +74,7 @@ const Register = () => {
 
       // console.log("URL:", process.env.REACT_APP_URL);
 
-      const res = await axios.post(`/api/auth/register`, registrationData);
+      const res = await api.post(`/api/auth/register`, registrationData);
 
       dispatch({ type: "REGISTER_SUCCESS", payload: res.data });
       showToast(
@@ -98,7 +98,7 @@ const Register = () => {
   const handleVerification = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("/api/auth/verify-email", {
+      const res = await api.post("/api/auth/verify-email", {
         token: verificationToken,
       });
       showToast("success", res.data);

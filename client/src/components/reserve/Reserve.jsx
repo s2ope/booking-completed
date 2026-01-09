@@ -4,7 +4,8 @@ import { useContext, useState } from "react";
 import useFetch from "../../hooks/useFetch";
 import { SearchContext } from "../../context/SearchContext";
 import { AuthContext } from "../../context/AuthContext";
-import axios from "axios";
+import { api } from "../../api/axios.js";
+
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../../helpers/ToastHelper";
 
@@ -92,7 +93,7 @@ const Reserve = ({ setOpen, hotelId }) => {
       // Update room availability
       await Promise.all(
         selectedRooms.map((roomId) =>
-          axios.put(`/api/rooms/availability/${roomId}`, {
+          api.put(`/api/rooms/availability/${roomId}`, {
             dates: alldates,
           })
         )
@@ -110,7 +111,7 @@ const Reserve = ({ setOpen, hotelId }) => {
       };
 
       // Save booking to database
-      await axios.post("/api/bookings/create", bookingData);
+      await api.post("/api/bookings/create", bookingData);
 
       // Close modal and navigate
       setOpen(false);
