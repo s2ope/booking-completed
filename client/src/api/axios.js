@@ -4,6 +4,7 @@ import axios from "axios";
 const baseURL = import.meta.env.DEV
   ? "/api" // use Vite proxy in dev
   : import.meta.env.VITE_API_URL; // full Render URL in production
+console.log("API URL:", baseURL);
 
 export const api = axios.create({
   baseURL,

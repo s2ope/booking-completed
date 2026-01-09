@@ -92,7 +92,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Something went wrong!" });
 });
 // console.log("MONGO_URI:", process.env.MONGO);
-console.log("API URL:", baseURL);
 
 const PORT = process.env.PORT || 8800;
 server.listen(PORT, () => {
