@@ -40,7 +40,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173", // local frontend during dev
-      "https://mern-backend-j4gu.onrender.com", // Render frontend
+      "https://mern-client-iota.vercel.app", // Render frontend
     ],
     credentials: true,
   })
