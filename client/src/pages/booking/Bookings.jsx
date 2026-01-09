@@ -1,4 +1,4 @@
-import { api } from "../../api/axios";
+import { api } from "../../api/axios.js";
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -65,7 +65,7 @@ const MyBookings = () => {
         showToast("Authorization token is missing", "error");
         return;
       }
-      const response = await api.patch(
+      const response = await axios.patch(
         `/api/bookings/${bookingId}`,
         {},
         {
