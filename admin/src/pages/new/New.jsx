@@ -3,7 +3,7 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
 import { useState } from "react";
-import axios from "axios";
+import { api } from "../../api/axios";
 import { showToast } from "../../helpers/ToastHelper";
 
 const API_KEY = import.meta.env.VITE_CLOUDINARY_API_URL;
@@ -57,9 +57,9 @@ const New = ({ inputs, title }) => {
         data.append("upload_preset", "upload");
 
         try {
-          const uploadRes = await axios.post(API_KEY, data);
+          const uploadRes = await api.post(API_KEY, data);
           imageUrl = uploadRes.data.url;
-          showToast( "Image uploaded successfully");
+          showToast("Image uploaded successfully");
         } catch (error) {
           showToast("error", "Failed to upload image");
           console.error("Image upload error:", error);
@@ -73,15 +73,15 @@ const New = ({ inputs, title }) => {
         img: imageUrl || "",
       };
 
-      const response = await axios.post("/api/auth/register", newUser);
-      
+      const response = await api.post("/api/auth/register", newUser);
+
       if (response.data) {
-        showToast( "User registered successfully");
+        showToast("User registered successfully");
         // Reset form
         setFile("");
         setInfo({});
         // Reset form inputs
-        const formElement = e.target.closest('form');
+        const formElement = e.target.closest("form");
         if (formElement) formElement.reset();
       }
     } catch (err) {
@@ -131,7 +131,7 @@ const New = ({ inputs, title }) => {
                 <div className="formInput" key={input.id}>
                   <label>
                     {input.label}
-                    {input.required && <span style={{ color: 'red' }}>*</span>}
+                    {input.required && <span style={{ color: "red" }}>*</span>}
                   </label>
                   <input
                     onChange={handleChange}
@@ -143,12 +143,12 @@ const New = ({ inputs, title }) => {
                   />
                 </div>
               ))}
-              <button 
-                onClick={handleClick} 
+              <button
+                onClick={handleClick}
                 disabled={isLoading}
                 style={{
                   opacity: isLoading ? 0.7 : 1,
-                  cursor: isLoading ? 'not-allowed' : 'pointer'
+                  cursor: isLoading ? "not-allowed" : "pointer",
                 }}
               >
                 {isLoading ? "Processing..." : "Send"}

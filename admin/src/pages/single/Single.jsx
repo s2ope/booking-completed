@@ -3,7 +3,7 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
 import { useParams, useLocation } from "react-router-dom";
 import useFetch from "../../hooks/useFetch";
-import axios from "axios";
+import { api } from "../../api/axios";
 import { useState, useEffect } from "react";
 
 const Single = () => {
@@ -29,7 +29,7 @@ const Single = () => {
     if (entityType === "rooms") {
       const fetchHotels = async () => {
         try {
-          const response = await axios.get("/api/hotels");
+          const response = await api.get("/api/hotels");
           setHotels(response.data);
         } catch (err) {
           console.error("Error fetching hotels:", err);
@@ -52,10 +52,11 @@ const Single = () => {
   };
 
   const handleInputChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setFormData(prev => ({
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: value
+      [e.target.name]: value,
     }));
   };
 
@@ -64,12 +65,12 @@ const Single = () => {
       setUpdateError(null);
       // Use the route parameter id directly
       // FIX: Need to work on this (id giving undefined)
-      const response = await axios.put(`/api/${entityType}/${id}`, {
+      const response = await api.put(`/api/${entityType}/${id}`, {
         ...formData,
         // Exclude _id from the request body to avoid MongoDB confusion
-        _id: undefined
+        _id: undefined,
       });
-      
+
       if (response.data) {
         setIsEditing(false);
         reFetch();
@@ -306,7 +307,9 @@ const Single = () => {
                   onChange={handleInputChange}
                 />
               ) : (
-                <span className="itemValue">{data.featured ? "Yes" : "No"}</span>
+                <span className="itemValue">
+                  {data.featured ? "Yes" : "No"}
+                </span>
               )}
             </div>
           </>
@@ -389,7 +392,7 @@ const Single = () => {
                   onChange={handleInputChange}
                 >
                   <option value="">Select a hotel</option>
-                  {hotels.map(hotel => (
+                  {hotels.map((hotel) => (
                     <option key={hotel._id} value={hotel._id}>
                       {hotel.name}
                     </option>
@@ -418,9 +421,13 @@ const Single = () => {
         <div className="top">
           <div className="left">
             {isEditing ? (
-              <button className="saveButton" onClick={handleSave}>Save</button>
+              <button className="saveButton" onClick={handleSave}>
+                Save
+              </button>
             ) : (
-              <button className="editButton" onClick={handleEditToggle}>Edit</button>
+              <button className="editButton" onClick={handleEditToggle}>
+                Edit
+              </button>
             )}
             <h1 className="title">Information</h1>
             <div className="item">
@@ -429,15 +436,10 @@ const Single = () => {
                 alt="profile"
                 className="itemImg"
               />
-              <div className="details">
-                {renderFields()}
-              </div>
+              <div className="details">{renderFields()}</div>
             </div>
-            {updateError && (
-              <div className="error-message">{updateError}</div>
-            )}
+            {updateError && <div className="error-message">{updateError}</div>}
           </div>
-        
         </div>
       </div>
     </div>

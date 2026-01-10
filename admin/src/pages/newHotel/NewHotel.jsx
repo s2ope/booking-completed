@@ -5,7 +5,7 @@ import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUpload
 import { useState } from "react";
 import { hotelInputs } from "../../formSource";
 import useFetch from "../../hooks/useFetch";
-import axios from "axios";
+import { api } from "../../api/axios";
 import { showToast } from "../../helpers/ToastHelper";
 
 const API_KEY = import.meta.env.VITE_CLOUDINARY_API_URL;
@@ -64,7 +64,7 @@ const NewHotel = () => {
           data.append("upload_preset", "upload");
 
           try {
-            const uploadRes = await axios.post(API_KEY, data);
+            const uploadRes = await api.post(API_KEY, data);
             const { url } = uploadRes.data;
             return url;
           } catch (uploadErr) {
@@ -82,18 +82,19 @@ const NewHotel = () => {
         photos: list,
       };
 
-      const response = await axios.post("/api/hotels", newhotel);
-      
+      const response = await api.post("/api/hotels", newhotel);
+
       if (response.data) {
-        showToast( "Hotel has been created successfully");
+        showToast("Hotel has been created successfully");
         setFiles("");
         setInfo({ featured: false });
         setRooms([]);
-        const formElement = e.target.closest('form');
+        const formElement = e.target.closest("form");
         if (formElement) formElement.reset();
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || "Failed to create hotel";
+      const errorMessage =
+        err.response?.data?.message || err.message || "Failed to create hotel";
       showToast("error", errorMessage);
       console.error("Hotel creation error:", err);
     } finally {
@@ -145,7 +146,7 @@ const NewHotel = () => {
                 <div className="formInput" key={input.id}>
                   <label>
                     {input.label}
-                    {input.required && <span style={{ color: 'red' }}>*</span>}
+                    {input.required && <span style={{ color: "red" }}>*</span>}
                   </label>
                   <input
                     id={input.id}
@@ -159,8 +160,8 @@ const NewHotel = () => {
               ))}
               <div className="formInput">
                 <label>Featured</label>
-                <select 
-                  id="featured" 
+                <select
+                  id="featured"
                   onChange={handleChange}
                   disabled={isLoading}
                 >
@@ -170,9 +171,9 @@ const NewHotel = () => {
               </div>
               <div className="selectRooms">
                 <label>Rooms (Optional)</label>
-                <select 
-                  id="rooms" 
-                  multiple 
+                <select
+                  id="rooms"
+                  multiple
                   onChange={handleSelect}
                   disabled={isLoading}
                 >
@@ -189,12 +190,12 @@ const NewHotel = () => {
                   )}
                 </select>
               </div>
-              <button 
+              <button
                 onClick={handleClick}
                 disabled={isLoading}
                 style={{
                   opacity: isLoading ? 0.7 : 1,
-                  cursor: isLoading ? 'not-allowed' : 'pointer'
+                  cursor: isLoading ? "not-allowed" : "pointer",
                 }}
               >
                 {isLoading ? "Creating..." : "Create Hotel"}

@@ -3,7 +3,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import useFetch from "../../hooks/useFetch";
-import axios from "axios";
+import { api } from "../../api/axios";
 
 const Datatable = ({ columns }) => {
   const location = useLocation();
@@ -21,7 +21,7 @@ const Datatable = ({ columns }) => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/${path}/${id}`);
+      await api.delete(`/api/${path}/${id}`);
       setList(list.filter((item) => item._id !== id));
     } catch (err) {
       console.error("Delete error:", err);
@@ -36,7 +36,10 @@ const Datatable = ({ columns }) => {
       renderCell: (params) => {
         return (
           <div className="cellAction">
-            <Link to={`/${path}/${params.row._id}`} style={{ textDecoration: "none" }}>
+            <Link
+              to={`/${path}/${params.row._id}`}
+              style={{ textDecoration: "none" }}
+            >
               <div className="viewButton">Edit</div>
             </Link>
             <div

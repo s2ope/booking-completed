@@ -5,7 +5,7 @@ import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUpload
 import { useState } from "react";
 import { roomInputs } from "../../formSource";
 import useFetch from "../../hooks/useFetch";
-import axios from "axios";
+import { api } from "../../api/axios";
 import { showToast } from "../../helpers/ToastHelper";
 
 const NewRoom = () => {
@@ -54,20 +54,20 @@ const NewRoom = () => {
         .map((room) => ({ number: room.trim() }))
         .filter((room) => room.number); // Remove empty entries
 
-      await axios.post(`/api/rooms/${hotelId}`, { ...info, roomNumbers });
-      showToast( "Room has been created successfully","success");
-      
+      await api.post(`/api/rooms/${hotelId}`, { ...info, roomNumbers });
+      showToast("Room has been created successfully", "success");
+
       // Reset form
       setInfo({});
       setRooms("");
       setHotelId("");
-      
-      // Reset form inputs
-      const formElement = e.target.closest('form');
-      if (formElement) formElement.reset();
 
+      // Reset form inputs
+      const formElement = e.target.closest("form");
+      if (formElement) formElement.reset();
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Failed to create room";
+      const errorMessage =
+        err.response?.data?.message || "Failed to create room";
       showToast("error", errorMessage);
       console.error("Error creating room:", err);
     } finally {
@@ -136,12 +136,12 @@ const NewRoom = () => {
                   )}
                 </select>
               </div>
-              <button 
+              <button
                 onClick={handleClick}
                 disabled={isSubmitting}
-                className={isSubmitting ? 'disabled' : ''}
+                className={isSubmitting ? "disabled" : ""}
               >
-                {isSubmitting ? 'Creating...' : 'Create Room'}
+                {isSubmitting ? "Creating..." : "Create Room"}
               </button>
             </form>
           </div>
