@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "../../api/axios";
+
 import { showToast } from "../../helpers/ToastHelper";
 
 const MailList = () => {
@@ -35,10 +36,7 @@ const MailList = () => {
     }
 
     try {
-      const response = await axios.post(
-        import.meta.env.VITE_API_URL + "/api/subscribe",
-        { email }
-      );
+      const response = await api.post("/api/subscribe", { email });
       setSubscribed(true);
       setEmail(""); // Clear input field after successful subscription
     } catch (error) {
