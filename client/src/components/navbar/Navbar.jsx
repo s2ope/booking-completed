@@ -181,10 +181,13 @@ const Navbar = () => {
                 </div>
                 <a
                   href="https://mern-admin-ten.vercel.app/login"
-                  className="text-[#ffff] px-3 py-1.5 rounded text-sm font-bold hover:bg-[#214F9F] transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white px-3 py-1.5 rounded text-sm font-bold hover:bg-[#214F9F]"
                 >
                   List Your Property
                 </a>
+
                 <Link
                   to="/register"
                   className="bg-white text-[#01357F] px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition-colors"
