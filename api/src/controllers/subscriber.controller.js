@@ -21,18 +21,25 @@ const subscribe = async (req, res, next) => {
 
     // Send confirmation email using Nodemailer
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
       },
     });
 
+    await transporter.verify();
+
     const mailOptions = {
-      from: process.env.EMAIL_USERNAME,
+      from: `"Mamabooking" <${process.env.EMAIL_USERNAME}>`,
       to: email,
       subject: "Subscription Confirmation",
-      text: "Thank you for subscribing to our newsletter!",
+      html: `
+        <h2>Thanks for subscribing!</h2>
+        <p>You have successfully subscribed to our newsletter.</p>
+      `,
     };
 
     // Using a promise-based approach for better error handling
@@ -40,12 +47,10 @@ const subscribe = async (req, res, next) => {
     console.log(`Confirmation email sent to ${email}`);
 
     // Respond with success message
-    res.status(200).json({ message: `Subscribed email: ${email}` });
+    res.status(200).json({ message: "Subscription successful. Email sent." });
   } catch (error) {
-    console.error("Error in subscribeController:", error);
-    res
-      .status(500)
-      .json({ error: "Internal server error. Please try again later." });
+    console.error("Email error:", error);
+    res.status(500).json({ error: "Failed to send email" });
   }
 };
 
