@@ -3,10 +3,11 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
 import { useState } from "react";
+import axios from "axios";
 import { api } from "../../api/axios";
 import { showToast } from "../../helpers/ToastHelper";
 
-const API_KEY = import.meta.env.VITE_CLOUDINARY_API_URL;
+const CLOUDINARY_URL = import.meta.env.VITE_CLOUDINARY_API_URL;
 
 const New = ({ inputs, title }) => {
   const [file, setFile] = useState("");
@@ -57,7 +58,7 @@ const New = ({ inputs, title }) => {
         data.append("upload_preset", "upload");
 
         try {
-          const uploadRes = await api.post(API_KEY, data);
+          const uploadRes = await axios.post(CLOUDINARY_URL, data);
           imageUrl = uploadRes.data.url;
           showToast("Image uploaded successfully");
         } catch (error) {
