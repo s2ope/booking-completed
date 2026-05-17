@@ -1,10 +1,11 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import useFetch from "../../hooks/useFetch";
+import SaveHotelButton from "../saveHotelButton/SaveHotelButton";
 
 const FeaturedProperties = () => {
-  const { data, loading, error } = useFetch(
-    "/api/hotels?featured=true&limit=4"
-  );
+  const { data, loading, error } = useFetch("/hotels?featured=true&limit=4");
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -44,8 +45,16 @@ const FeaturedProperties = () => {
     <div className="w-full max-w-5xl mx-auto flex flex-wrap justify-between gap-2 px-4">
       {data.map((item) => (
         <div
-          className="flex-1 min-w-[200px] flex flex-col cursor-pointer group"
+          onClick={() => navigate(`/hotels/${item._id}`)}
+          className="flex-1 min-w-[200px] flex flex-col cursor-pointer group no-underline"
           key={item._id}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              navigate(`/hotels/${item._id}`);
+            }
+          }}
         >
           <div className="relative rounded-lg overflow-hidden">
             <img
@@ -60,6 +69,10 @@ const FeaturedProperties = () => {
                 </div>
               </div>
             )}
+            <SaveHotelButton
+              hotelId={item._id}
+              className="absolute left-2 top-2 h-9 w-9"
+            />
           </div>
 
           <div className="mt-2 space-y-1">

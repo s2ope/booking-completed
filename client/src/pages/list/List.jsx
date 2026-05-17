@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useContext } from "react";
 import { useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { DateRange } from "react-date-range";
@@ -7,31 +7,78 @@ import Header from "../../components/header/Header";
 import SearchItem from "../../components/searchItem/SearchItem";
 import useFetch from "../../hooks/useFetch";
 import { showToast } from "../../helpers/ToastHelper";
+import { SearchContext } from "../../context/SearchContext";
 
 const List = () => {
   const location = useLocation();
-  const { destination, dates, options } = location.state || {
+  const defaultEndDate = new Date();
+  defaultEndDate.setDate(defaultEndDate.getDate() + 1);
+  const { destination, dates, options, propertyType } = location.state || {
     destination: "",
-    dates: [{ startDate: new Date(), endDate: new Date() }],
+    dates: [{ startDate: new Date(), endDate: defaultEndDate, key: "selection" }],
     options: { adult: 1, children: 0, room: 1 },
+    propertyType: "",
   };
 
   const [searchDestination, setSearchDestination] = useState(destination);
   const [searchDates, setSearchDates] = useState(dates);
   const [openDate, setOpenDate] = useState(false);
   const [searchOptions, setSearchOptions] = useState(options);
+  const [searchPropertyType, setSearchPropertyType] = useState(
+    propertyType || ""
+  );
   const [min, setMin] = useState(undefined);
   const [max, setMax] = useState(undefined);
+  const { dispatch } = useContext(SearchContext);
 
-  const { data, loading, error, reFetch } = useFetch(
-    `/api/hotels?city=${searchDestination}&min=${min || 0}&max=${max || 999}`
+  const normalizePropertyType = (type) =>
+    ({
+      apartments: "apartment",
+      resorts: "resort",
+      villas: "villa",
+      cabins: "cabin",
+    }[type] || type);
+
+  const hotelQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    const destinationValue = searchDestination.trim();
+
+    if (destinationValue) params.set("city", destinationValue);
+    if (searchPropertyType) {
+      params.set("type", normalizePropertyType(searchPropertyType));
+    }
+    params.set("min", min || 0);
+    params.set("max", max || 999);
+
+    return `/hotels?${params.toString()}`;
+  }, [searchDestination, searchPropertyType, min, max]);
+
+  const { data, loading, error, reFetch } = useFetch(hotelQuery);
+
+  const currentSearchState = useMemo(
+    () => ({
+      destination: searchDestination,
+      dates: searchDates,
+      options: searchOptions,
+      filters: {
+        min,
+        max,
+        propertyType: searchPropertyType,
+      },
+    }),
+    [searchDestination, searchDates, searchOptions, min, max, searchPropertyType]
   );
 
   useEffect(() => {
     setSearchDestination(destination);
     setSearchDates(dates);
     setSearchOptions(options);
-  }, [destination, dates, options]);
+    setSearchPropertyType(propertyType || "");
+  }, [destination, dates, options, propertyType]);
+
+  useEffect(() => {
+    dispatch({ type: "NEW_SEARCH", payload: currentSearchState });
+  }, [dispatch, currentSearchState]);
 
   const validateSearch = () => {
     if (max && min && Number(max) < Number(min)) {
@@ -55,12 +102,13 @@ const List = () => {
     if (!validateSearch()) return;
 
     try {
-      await reFetch();
-      if (data.length === 0) {
+      dispatch({ type: "NEW_SEARCH", payload: currentSearchState });
+      const results = await reFetch();
+      if (results.length === 0) {
         showToast("No hotels found matching your criteria", "info");
       } else {
         showToast(
-          `Found ${data.length} hotels matching your criteria`,
+          `Found ${results.length} hotels matching your criteria`,
           "success"
         );
       }
@@ -175,6 +223,21 @@ const List = () => {
                 <div className="mb-4">
                   <h3 className="text-sm text-gray-600 mb-2">Options</h3>
                   <div className="bg-white rounded p-3 space-y-2">
+                    {searchPropertyType && (
+                      <div className="flex justify-between items-center rounded bg-blue-50 px-2 py-1 text-xs text-blue-700">
+                        <span className="capitalize">
+                          {searchPropertyType}
+                        </span>
+                        <button
+                          type="button"
+                          className="font-semibold hover:underline"
+                          onClick={() => setSearchPropertyType("")}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-700">
                         Min price{" "}
@@ -248,7 +311,13 @@ const List = () => {
             ) : (
               <div className="space-y-4">
                 {data && data.length > 0 ? (
-                  data.map((item) => <SearchItem key={item._id} item={item} />)
+                  data.map((item) => (
+                    <SearchItem
+                      key={item._id}
+                      item={item}
+                      searchState={currentSearchState}
+                    />
+                  ))
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     No hotels found. Try adjusting your search criteria.

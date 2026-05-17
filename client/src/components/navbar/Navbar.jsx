@@ -73,16 +73,16 @@ const Navbar = () => {
   };
 
   const menuItems = [
-    { icon: BookOpen, label: "My Bookings", path: "/my-bookings" },
     { icon: User, label: "My Account", path: "/my-account" },
     { icon: Bookmark, label: "Saved", path: "/saved" },
+    { icon: BookOpen, label: "My Bookings", path: "/my-bookings" },
   ];
 
   const notifications = [
-    { message: "You have a new booking!", href: "/bookings" },
+    { message: "Review your latest bookings", href: "/my-bookings" },
     {
-      message: "There is a special offer on hotels in Paris!",
-      href: "/hotels/paris",
+      message: "Search available stays",
+      href: "/hotels",
     },
   ];
 

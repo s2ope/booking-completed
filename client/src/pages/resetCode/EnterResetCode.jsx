@@ -23,7 +23,7 @@ const EnterResetCode = () => {
     }
 
     try {
-      const response = await api.post("/api/auth/verify-reset-code", {
+      const response = await api.post("/auth/verify-reset-code", {
         token: resetCode,
       });
 

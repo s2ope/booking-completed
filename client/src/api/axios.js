@@ -1,9 +1,14 @@
 import axios from "axios";
 
-// Dynamically set baseURL
+const normalizeApiBase = (url) => {
+  if (!url) return "/api";
+  const trimmed = url.replace(/\/$/, "");
+  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+};
+
 const baseURL = import.meta.env.DEV
-  ? "/api" // use Vite proxy in dev
-  : import.meta.env.VITE_API_URL; // full Render URL in production
+  ? "/api"
+  : normalizeApiBase(import.meta.env.VITE_API_URL);
 
 export const api = axios.create({
   baseURL,

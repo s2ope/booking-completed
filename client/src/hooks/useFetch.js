@@ -1,25 +1,18 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../api/axios";
 
 const useFetch = (url) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ✅ Automatically choose backend based on environment
-  const baseURL = import.meta.env.DEV
-    ? "http://localhost:8800" // local backend during development
-    : import.meta.env.VITE_API_URL || ""; // production backend from .env
-
-  // ✅ Ensure there’s exactly one slash between baseURL and url
-  const fullURL = `${baseURL.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(fullURL);
+        const res = await api.get(url);
         setData(res.data);
+        setError(null);
       } catch (err) {
         setError(err);
       } finally {
@@ -28,16 +21,19 @@ const useFetch = (url) => {
     };
 
     fetchData();
-  }, [fullURL]);
+  }, [url]);
 
   // Manual re-fetch option
   const reFetch = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(fullURL);
+      const res = await api.get(url);
       setData(res.data);
+      setError(null);
+      return res.data;
     } catch (err) {
       setError(err);
+      throw err;
     } finally {
       setLoading(false);
     }

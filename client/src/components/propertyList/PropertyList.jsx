@@ -1,8 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import useFetch from "../../hooks/useFetch.js";
 
 const PropertyList = () => {
-  const { data, loading, error } = useFetch("/api/hotels/countByType");
+  const { data, loading, error } = useFetch("/hotels/countByType");
+  const navigate = useNavigate();
 
   const images = [
     "https://cf.bstatic.com/xdata/images/xphoto/square300/57584488.webp?k=bf724e4e9b9b75480bbe7fc675460a089ba6414fe4693b83ea3fdd8e938832a6&o=",
@@ -11,6 +13,20 @@ const PropertyList = () => {
     "https://cf.bstatic.com/static/img/theme-index/carousel_320x240/card-image-villas_300/dd0d7f8202676306a661aa4f0cf1ffab31286211.jpg",
     "https://cf.bstatic.com/static/img/theme-index/carousel_320x240/card-image-chalet_300/8ee014fcc493cb3334e25893a1dee8c6d36ed0ba.jpg",
   ];
+
+  const handleTypeClick = (propertyType) => {
+    if (!propertyType) return;
+
+    const normalized =
+      {
+        apartments: "apartment",
+        resorts: "resort",
+        villas: "villa",
+        cabins: "cabin",
+      }[propertyType] || propertyType;
+
+    navigate(`/property-types/${encodeURIComponent(normalized)}`);
+  };
 
   if (error) {
     return (
@@ -41,7 +57,15 @@ const PropertyList = () => {
               images.map((img, i) => (
                 <div
                   key={i}
+                  onClick={() => handleTypeClick(data[i]?.type)}
                   className="group cursor-pointer transition-transform duration-300 hover:-translate-y-1"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      handleTypeClick(data[i]?.type);
+                    }
+                  }}
                 >
                   <div className="relative rounded-lg overflow-hidden">
                     <img

@@ -47,7 +47,7 @@ const ResetPassword = () => {
 
     try {
       const token = searchParams.get("code");
-      const response = await api.post("/api/auth/reset-password", {
+      const response = await api.post("/auth/reset-password", {
         token,
         password: newPassword,
       });

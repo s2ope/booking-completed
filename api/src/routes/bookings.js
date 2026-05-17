@@ -4,24 +4,25 @@ import {
   getUserBookings,
   getBooking,
   updateBookingStatus,
-  deleteBooking,
+  cancelBooking,
 } from "../controllers/booking.controllers.js";
-
+import { verifyAdmin, verifyToken } from "../utils/verifyToken.js";
 const router = express.Router();
 
 // Route to create a new booking
-router.post("/create", createBooking); // simplified route
+router.post("/create", verifyToken, createBooking);
 
 // Route to get all bookings of the logged-in user
-router.get("/get", getUserBookings); // simplified route
+router.get("/get", verifyToken, getUserBookings);
 
 // Route to get a single booking by ID
-router.get("/:id", getBooking);
+router.get("/:id", verifyToken, getBooking);
 
 // Route to update the status of a booking
-router.put("/:id", updateBookingStatus); // simplified route
+router.put("/:id", verifyAdmin, updateBookingStatus);
 
 // Route to delete a booking by ID
-router.patch("/:id", deleteBooking);
+router.patch("/:id/cancel", verifyToken, cancelBooking);
+router.patch("/:id", verifyToken, cancelBooking);
 
 export default router;

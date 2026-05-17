@@ -1,12 +1,42 @@
-import { Link } from "react-router-dom";
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import SaveHotelButton from "../saveHotelButton/SaveHotelButton";
+import { SearchContext } from "../../context/SearchContext";
 
-const SearchItem = ({ item }) => {
+const SearchItem = ({ item, searchState }) => {
+  const navigate = useNavigate();
+  const { dispatch } = useContext(SearchContext);
+
+  const openDetails = () => {
+    if (searchState) {
+      dispatch({ type: "NEW_SEARCH", payload: searchState });
+      navigate(`/hotels/${item._id}`, { state: { search: searchState } });
+      return;
+    }
+
+    navigate(`/hotels/${item._id}`);
+  };
+
   return (
-    <div className="searchItem border border-lightgray p-2.5 rounded-md flex justify-between gap-5 mb-5">
+    <div
+      className="searchItem relative border border-lightgray p-2.5 rounded-md flex justify-between gap-5 mb-5 cursor-pointer hover:shadow-md transition-shadow"
+      onClick={openDetails}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          openDetails();
+        }
+      }}
+    >
       <img
-        src={item.photos[0]}
-        alt=""
+        src={item.photos?.[0]}
+        alt={item.name}
         className="siImg w-48 h-48 object-cover"
+      />
+      <SaveHotelButton
+        hotelId={item._id}
+        className="absolute left-4 top-4 h-9 w-9"
       />
       <div className="siDesc flex flex-col gap-2.5 flex-2">
         <h1 className="siTitle text-lg text-[#0071c2]">{item.name}</h1>
@@ -39,11 +69,15 @@ const SearchItem = ({ item }) => {
           <span className="siTaxOp text-xs text-gray-500">
             Includes taxes and fees
           </span>
-          <Link to={`/hotels/${item._id}`}>
-            <button className="siCheckButton bg-[#0071c2] text-white font-bold py-2.5 px-1.25 rounded-md border-none cursor-pointer">
-              See availability
-            </button>
-          </Link>
+          <button
+            className="siCheckButton bg-[#0071c2] text-white font-bold py-2.5 px-3 rounded-md border-none cursor-pointer"
+            onClick={(event) => {
+              event.stopPropagation();
+              openDetails();
+            }}
+          >
+            See availability
+          </button>
         </div>
       </div>
     </div>

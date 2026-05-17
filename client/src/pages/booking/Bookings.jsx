@@ -1,130 +1,100 @@
 import { api } from "../../api/axios.js";
-import React, { useState, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navbar/Navbar";
 import Header from "../../components/header/Header";
 import { showToast } from "../../helpers/ToastHelper";
+import { AuthContext } from "../../context/AuthContext";
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cancelingBookingId, setCancelingBookingId] = useState(null);
-
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!user) {
+      navigate("/login", { state: { from: "/my-bookings" } });
+      return;
+    }
+
     const fetchBookings = async () => {
       try {
-        const user = localStorage.getItem("user");
-        if (!user) {
-          setError("Authorization token is missing.");
-          setLoading(false);
-          return;
-        }
-
-        const parsedUser = JSON.parse(user); // Parse the user object from localStorage
-        const userId = parsedUser._id; // Extract _id from the parsed user object
-
-        // console.log("Logged in User ID:", userId); // Debug log
-
-        const response = await api.get("/api/bookings/get", {
-          headers: {
-            Authorization: `Bearer ${user}`,
-          },
-        });
-
-        // console.log("Bookings Response:", response.data); // Debug log
-
-        // Filter bookings to match the logged-in user's _id in the user field
-        const filteredBookings = response.data.filter((booking) => {
-          const bookingUserId = booking.user; // Now directly use the `user` string field
-          // console.log("Booking User ID:", bookingUserId); // Debug log
-          return bookingUserId === userId; // Compare the user._id with the logged-in user._id
-        });
-
-        setBookings(filteredBookings || []);
+        const response = await api.get("/bookings/get");
+        setBookings(Array.isArray(response.data) ? response.data : []);
+      } catch (err) {
+        setError(err?.response?.data?.message || "Failed to fetch bookings");
+      } finally {
         setLoading(false);
-      } catch (error) {
-        console.error("Error fetching bookings:", error);
-        setError(error?.response?.data?.message || "Failed to fetch bookings");
-        setLoading(false);
-        setBookings([]);
       }
     };
 
     fetchBookings();
-  }, []);
+  }, [navigate, user]);
 
   const handleCancelBooking = async (bookingId) => {
     setCancelingBookingId(bookingId);
     try {
-      const user = localStorage.getItem("user");
-      if (!user) {
-        showToast("Authorization token is missing", "error");
-        return;
-      }
-      const response = await axios.patch(
-        `/api/bookings/${bookingId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${user}`,
-          },
-        }
-      );
+      const response = await api.patch(`/bookings/${bookingId}/cancel`);
 
       setBookings((prev) =>
         prev.map((booking) =>
-          booking._id === bookingId
-            ? { ...booking, status: response.data.status }
-            : booking
+          booking._id === bookingId ? response.data : booking
         )
       );
+      showToast("Booking canceled successfully!", "success");
     } catch (error) {
-      console.error("Error canceling booking:", error);
-      alert(error?.response?.data?.message || "Failed to cancel booking");
+      showToast(
+        error?.response?.data?.message || "Failed to cancel booking",
+        "error"
+      );
     } finally {
       setCancelingBookingId(null);
     }
   };
 
-  const handleCancelAndNavigate = (bookingId) => {
-    handleCancelBooking(bookingId);
-    showToast("Booking canceled successfully!", "info");
-
-    navigate(`/my-bookings`);
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
+  const statusClass = (status) => {
+    switch (status) {
+      case "confirmed":
+        return "bg-green-50 text-green-700";
+      case "pending":
+        return "bg-yellow-50 text-yellow-700";
+      case "canceled":
+        return "bg-red-50 text-red-700";
+      case "completed":
+        return "bg-blue-50 text-blue-700";
+      default:
+        return "bg-gray-50 text-gray-700";
+    }
   };
 
   if (loading) {
     return (
-      <div className="text-center text-gray-500 py-8">Loading bookings...</div>
+      <div>
+        <Navbar />
+        <Header type="list" />
+        <div className="text-center text-gray-500 py-8">Loading bookings...</div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center text-red-500 py-8">
-        {error}
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-gray-500 text-white px-4 py-2 rounded mt-4"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  if (!Array.isArray(bookings)) {
-    return (
-      <div className="text-center text-gray-500 py-8">
-        {showToast("No booking data available", "info")}
-        No booking data available
+      <div>
+        <Navbar />
+        <Header type="list" />
+        <div className="text-center text-red-500 py-8">
+          {error}
+          <button
+            onClick={() => window.location.reload()}
+            className="block mx-auto bg-gray-500 text-white px-4 py-2 rounded mt-4"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -143,34 +113,49 @@ const MyBookings = () => {
             {bookings.map((booking) => (
               <div
                 key={booking._id}
-                className="bg-white shadow-md rounded-lg p-6 flex justify-between items-center"
+                className="bg-white shadow-md rounded-lg p-6 flex flex-col md:flex-row md:justify-between md:items-center gap-5"
               >
                 <div>
                   <h2 className="text-xl font-semibold">
                     {booking.hotel?.name || "Hotel Details Unavailable"}
                   </h2>
-                  <div className="text-gray-600 mt-2">
+                  <div className="text-gray-600 mt-2 space-y-1">
                     <p>Check-in: {format(new Date(booking.startDate), "PP")}</p>
                     <p>Check-out: {format(new Date(booking.endDate), "PP")}</p>
+                    <p>
+                      Rooms:{" "}
+                      {booking.rooms
+                        ?.map((room) => room.number || room.title)
+                        .join(", ") || "N/A"}
+                    </p>
                     <p>Total Price: ${booking.totalPrice}</p>
-                    <p>Status: {booking.status}</p>
+                    <p>
+                      Status:{" "}
+                      <span
+                        className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold capitalize ${statusClass(
+                          booking.status
+                        )}`}
+                      >
+                        {booking.status}
+                      </span>
+                    </p>
                   </div>
                 </div>
-                <div className="flex space-x-4">
+                <div className="flex flex-wrap gap-3">
                   <button
                     className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                     onClick={() => navigate(`/my-bookings/${booking._id}`)}
                   >
                     View Details
                   </button>
-                  {booking.status === "pending" && (
+                  {["pending", "confirmed"].includes(booking.status) && (
                     <button
                       className={`${
                         cancelingBookingId === booking._id
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-red-500 hover:bg-red-600"
                       } text-white px-4 py-2 rounded`}
-                      onClick={() => handleCancelAndNavigate(booking._id)}
+                      onClick={() => handleCancelBooking(booking._id)}
                       disabled={cancelingBookingId === booking._id}
                     >
                       {cancelingBookingId === booking._id

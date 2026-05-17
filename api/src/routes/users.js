@@ -1,5 +1,10 @@
 import express from "express";
 import {
+  getMe,
+  updateMe,
+  getSavedHotels,
+  saveHotel,
+  unsaveHotel,
   updateUser,
   deleteUser,
   getUser,
@@ -20,6 +25,13 @@ const router = express.Router();
 // router.get("/checkadmin/:id", verifyAdmin, (req,res,next)=>{
 //     res.send("hello admin, you are logged in and you can delete all accounts")
 // })
+
+// CURRENT USER
+router.get("/me", verifyToken, getMe);
+router.put("/me", verifyToken, updateMe);
+router.get("/me/saved", verifyToken, getSavedHotels);
+router.post("/me/saved/:hotelId", verifyToken, saveHotel);
+router.delete("/me/saved/:hotelId", verifyToken, unsaveHotel);
 
 //UPDATE
 router.put("/:id", verifyUser, updateUser);

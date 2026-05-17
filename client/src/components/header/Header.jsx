@@ -4,11 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBed,
   faCalendarDays,
-  faCar,
   faPerson,
-  faPlane,
-  faTaxi,
-  faOtter,
 } from "@fortawesome/free-solid-svg-icons";
 import { DateRange } from "react-date-range";
 import { format } from "date-fns";
@@ -18,11 +14,13 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
 const Header = ({ type }) => {
+  const defaultEndDate = new Date();
+  defaultEndDate.setDate(defaultEndDate.getDate() + 1);
   const [destination, setDestination] = useState("");
   const [dates, setDates] = useState([
     {
       startDate: new Date(),
-      endDate: new Date(),
+      endDate: defaultEndDate,
       key: "selection",
     },
   ]);
@@ -53,9 +51,8 @@ const Header = ({ type }) => {
     navigate("/login");
   };
 
-  const handleSectionClick = (section, path) => {
+  const handleSectionClick = (section) => {
     setActiveSection(section);
-    navigate(path);
   };
 
   return (
@@ -94,7 +91,7 @@ const Header = ({ type }) => {
                   className={`flex items-center gap-2 px-3 sm:px-4 flex-1 min-w-[200px] sm:min-w-[260px] h-12 sm:h-full rounded ${
                     activeSection === "destination" ? "bg-gray-100" : ""
                   }`}
-                  onClick={() => handleSectionClick("destination", "/")}
+                  onClick={() => handleSectionClick("destination")}
                 >
                   <FontAwesomeIcon icon={faBed} className="text-gray-400" />
                   <input
@@ -111,7 +108,7 @@ const Header = ({ type }) => {
                   className={`flex items-center gap-2 px-3 sm:px-4 flex-1 min-w-[200px] sm:min-w-[260px] h-12 sm:h-full cursor-pointer rounded ${
                     activeSection === "date" ? "bg-gray-100" : ""
                   }`}
-                  onClick={() => handleSectionClick("date", "/")}
+                  onClick={() => handleSectionClick("date")}
                 >
                   <FontAwesomeIcon
                     icon={faCalendarDays}
@@ -142,7 +139,7 @@ const Header = ({ type }) => {
                   className={`flex items-center gap-2 px-3 sm:px-4 flex-1 min-w-[200px] sm:min-w-[260px] h-12 sm:h-full cursor-pointer rounded ${
                     activeSection === "options" ? "bg-gray-100" : ""
                   }`}
-                  onClick={() => handleSectionClick("options", "/")}
+                  onClick={() => handleSectionClick("options")}
                 >
                   <FontAwesomeIcon icon={faPerson} className="text-gray-400" />
                   <span className="text-gray-600 text-sm sm:text-base">

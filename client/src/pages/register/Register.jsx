@@ -72,39 +72,38 @@ const Register = () => {
         isAdmin: credentials.role === "seller", // This will be included in req.body
       };
 
-      // console.log("URL:", process.env.REACT_APP_URL);
+      const res = await api.post("/auth/register", registrationData);
 
-      const res = await api.post(`/api/auth/register`, registrationData);
-
-      dispatch({ type: "REGISTER_SUCCESS", payload: res.data });
+      dispatch({ type: "REGISTER_SUCCESS" });
       showToast(
-        "success",
-        `Registration successful. ${
-          credentials.role === "seller" ? "Seller" : "Buyer"
-        } account created. Check your email for a verification code.`
+        res.data?.message ||
+          `Registration successful. ${
+            credentials.role === "seller" ? "Seller" : "Buyer"
+          } account created.`,
+        "success"
       );
-      setIsVerificationStep(true);
+      navigate("/login");
     } catch (err) {
       const message =
-        err.response?.data ||
+        err.response?.data?.message ||
         err.message ||
         "Registration failed. Please try again.";
 
       dispatch({ type: "REGISTER_FAILURE", payload: message });
-      showToast("error", message);
+      showToast(message, "error");
     }
   };
 
   const handleVerification = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/api/auth/verify-email", {
+      const res = await api.post("/auth/verify-email", {
         token: verificationToken,
       });
-      showToast("success", res.data);
+      showToast(res.data, "success");
       navigate("/login");
     } catch (err) {
-      showToast("error", err.response.data);
+      showToast(err.response?.data?.message || err.response?.data, "error");
     }
   };
 
@@ -184,9 +183,7 @@ const Register = () => {
           {validationError && (
             <p className="mt-2 text-sm text-red-600">{validationError}</p>
           )}
-          {error && (
-            <p className="mt-2 text-sm text-red-600">{error.message}</p>
-          )}
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           <div className="mt-4 text-center">
             <span className="text-gray-600">Already have an account? </span>
             <button

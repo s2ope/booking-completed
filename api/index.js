@@ -11,6 +11,7 @@ import usersRoute from "./src/routes/users.js";
 import hotelsRoute from "./src/routes/hotels.js";
 import roomsRoute from "./src/routes/rooms.js";
 import bookingsRoute from "./src/routes/bookings.js";
+import adminRoute from "./src/routes/admin.js";
 import subscribeRoute from "./src/controllers/email.controller.js";
 
 dotenv.config();
@@ -40,11 +41,11 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173", // local frontend during dev
-      "https://mern-client-iota.vercel.app",
-      "https://mern-admin-ten.vercel.app",
+      // "https://mern-client-iota.vercel.app",
+      // "https://mern-admin-ten.vercel.app",
     ],
     credentials: true,
-  })
+  }),
 );
 app.use(cookieParser());
 
@@ -85,12 +86,17 @@ app.use("/api/users", usersRoute);
 app.use("/api/hotels", hotelsRoute);
 app.use("/api/rooms", roomsRoute);
 app.use("/api/bookings", bookingsRoute);
+app.use("/api/admin", adminRoute);
 app.use("/api/subscribe", subscribeRoute);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Something went wrong!" });
+  const status = err.status || 500;
+  const message = err.message || "Something went wrong!";
+  if (status >= 500) {
+    console.error(err.stack || err);
+  }
+  res.status(status).json({ message });
 });
 // console.log("MONGO_URI:", process.env.MONGO);
 

@@ -1,45 +1,20 @@
 import express from "express";
 import nodemailer from "nodemailer";
-import mongoose from "mongoose";
-import path from "path";
-import { fileURLToPath } from "url";
+import Subscriber from "../models/Subscriber.js";
 
 const router = express.Router();
 
-// Mongoose schema for storing emails
-const emailSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-});
-
-const Email = mongoose.model("Email", emailSchema);
-
-// Function to validate email format
 const validateEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
 };
 
-// Subscribe route
-router.post("/", async (req, res) => {
-  const { email } = req.body;
-
-  // Validate email format
-  if (!validateEmail(email)) {
-    return res.status(400).json({ message: "Invalid email format" });
+const sendConfirmationEmail = async (email) => {
+  if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
+    return false;
   }
 
   try {
-    // Check if email already exists in the database
-    const existingEmail = await Email.findOne({ email });
-    if (existingEmail) {
-      return res.status(400).json({ message: "Already subscribed" });
-    }
-
-    // Save email to MongoDB
-    const newEmail = new Email({ email });
-    await newEmail.save();
-
-    // Nodemailer transporter configuration
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -48,46 +23,53 @@ router.post("/", async (req, res) => {
       },
     });
 
-    // Resolve file path for attachment
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const attachmentPath = path.join(
-      __dirname,
-      "../../public/uploads/sample.png"
-    );
-
-    // Email content
-    const mailOptions = {
+    await transporter.sendMail({
       from: process.env.EMAIL_USERNAME,
       to: email,
-      subject: "Subscription Confirmation",
-      text: "Thank you for subscribing to our newsletter!",
-      html: "<b>Feel free to contact us</b>",
-      attachments: [
-        {
-          filename: "sample.png", // File name to show in the email
-          path: attachmentPath, // Absolute path to the image file
-          contentType: "image/png",
-        },
-      ],
-    };
+      subject: "Mamabooking Subscription Confirmation",
+      text: "Thank you for subscribing to Mamabooking deals.",
+      html: "<p>Thank you for subscribing to Mamabooking deals.</p>",
+    });
 
-    // Send email
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending email:", error);
-        return res
-          .status(500)
-          .json({ error: "Error sending email. Please try again later." });
-      }
-      console.log("Email sent successfully:", info.response);
-      res.status(200).json({ message: `Subscribed email: ${email}` });
+    return true;
+  } catch (error) {
+    console.error("Subscription email failed:", error.message);
+    return false;
+  }
+};
+
+router.post("/", async (req, res, next) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+
+  if (!validateEmail(email)) {
+    return res.status(400).json({ message: "Please enter a valid email address." });
+  }
+
+  try {
+    const existingSubscriber = await Subscriber.findOne({ email });
+
+    if (existingSubscriber) {
+      return res.status(200).json({
+        message: "You are already subscribed.",
+        subscribed: true,
+        alreadySubscribed: true,
+        emailSent: false,
+      });
+    }
+
+    await Subscriber.create({ email });
+    const emailSent = await sendConfirmationEmail(email);
+
+    res.status(201).json({
+      message: emailSent
+        ? "Subscribed successfully. Check your email for confirmation."
+        : "Subscribed successfully.",
+      subscribed: true,
+      alreadySubscribed: false,
+      emailSent,
     });
   } catch (error) {
-    console.error("Error subscribing:", error);
-    res
-      .status(500)
-      .json({ error: "Error subscribing. Please try again later." });
+    next(error);
   }
 });
 

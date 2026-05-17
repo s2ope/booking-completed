@@ -32,10 +32,15 @@ const AuthReducer = (state, action) => {
         error: null,
       };
     case "LOGIN_SUCCESS":
-    case "REGISTER_SUCCESS":
       return {
         ...state,
         user: action.payload, // Keep the entire payload as user data
+        loading: false,
+        error: null,
+      };
+    case "REGISTER_SUCCESS":
+      return {
+        ...state,
         loading: false,
         error: null,
       };

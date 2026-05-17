@@ -43,14 +43,16 @@ const Login = () => {
     if (!validateInputs()) return;
     dispatch({ type: "LOGIN_START" });
     try {
-      const res = await api.post("/api/auth/login", credentials);
+      const res = await api.post("/auth/login", credentials);
       dispatch({ type: "LOGIN_SUCCESS", payload: res.data.details });
-      localStorage.setItem("token", res.data.token);
       showToast("Login successful!", "success");
       navigate(from);
     } catch (err) {
       showToast(err.response?.data?.message || "Login failed!", "error");
-      dispatch({ type: "LOGIN_FAILURE" });
+      dispatch({
+        type: "LOGIN_FAILURE",
+        payload: err.response?.data?.message || "Login failed!",
+      });
     }
   };
 
@@ -61,7 +63,7 @@ const Login = () => {
       return;
     }
     try {
-      await api.post("/api/auth/forgot-password", {
+      await api.post("/auth/forgot-password", {
         email,
       });
       showToast("Reset link sent! Check your email.", "success");

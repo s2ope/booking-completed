@@ -36,6 +36,12 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    savedHotels: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Hotel",
+      },
+    ],
     verificationCode: String, // For email verification
     resetPasswordToken: String, // For storing password reset token
     resetPasswordExpires: Date, // For storing expiration time of reset token

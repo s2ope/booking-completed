@@ -7,56 +7,86 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const canAssignAdminRole = (req) => {
+  const token = req.cookies?.access_token;
+  if (!token) return false;
+
+  try {
+    const user = jsonwebtoken.verify(token, process.env.JWT);
+    return Boolean(user?.isAdmin);
+  } catch {
+    return false;
+  }
+};
+
 // Register function
 export const register = async (req, res, next) => {
   try {
+    const existingUser = await User.findOne({
+      $or: [{ username: req.body.username }, { email: req.body.email }],
+    });
+
+    if (existingUser) {
+      return next(createError(409, "Username or email is already registered."));
+    }
+
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(req.body.password, salt);
 
     const newUser = new User({
-      ...req.body,
+      username: req.body.username,
+      email: req.body.email,
+      phone: req.body.phone,
+      country: req.body.country,
+      city: req.body.city,
+      img: req.body.img,
+      isAdmin:
+        canAssignAdminRole(req) &&
+        (req.body.isAdmin === true || req.body.isAdmin === "true"),
       password: hash,
     });
 
     await newUser.save();
 
-    // Generate email verification token
     const verificationToken = jsonwebtoken.sign(
       { email: newUser.email },
       process.env.JWT,
       { expiresIn: "1h" }
     );
 
-    // Nodemailer transporter configuration
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
+    let emailSent = false;
 
-    const mailOptions = {
-      from: process.env.EMAIL_USERNAME,
-      to: newUser.email,
-      subject: "Email Verification",
-      text: `Please verify your email by clicking on the following link: 
-      https://mern-backend-j4gu.onrender.com/api/auth/verify-email?token=${verificationToken}`,
-    };
+    if (process.env.EMAIL_USERNAME && process.env.EMAIL_PASSWORD) {
+      try {
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.EMAIL_USERNAME,
+            pass: process.env.EMAIL_PASSWORD,
+          },
+        });
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending email:", error);
-        return res
-          .status(500)
-          .json({ error: "Error sending email. Please try again later." });
+        await transporter.sendMail({
+          from: process.env.EMAIL_USERNAME,
+          to: newUser.email,
+          subject: "Email Verification",
+          text: `Please verify your email by visiting: ${req.protocol}://${req.get(
+            "host"
+          )}/api/auth/verify-email?token=${verificationToken}`,
+        });
+        emailSent = true;
+      } catch (error) {
+        console.error("Verification email failed:", error.message);
       }
-      console.log("Verification email sent successfully:", info.response);
-      res
-        .status(200)
-        .send(
-          "User has been created. Please check your email to verify your account."
-        );
+    }
+
+    const { password, ...details } = newUser._doc;
+    res.status(201).json({
+      message: emailSent
+        ? "User created successfully. Please check your email to verify your account."
+        : "User created successfully. You can log in now.",
+      emailSent,
+      user: details,
     });
   } catch (err) {
     next(err);
@@ -65,8 +95,12 @@ export const register = async (req, res, next) => {
 
 // Email verification function
 export const verifyEmail = async (req, res, next) => {
-  const { token } = req.body;
+  const token = req.body.token || req.query.token;
   try {
+    if (!token) {
+      return next(createError(400, "Verification token is required."));
+    }
+
     const decoded = jsonwebtoken.verify(token, process.env.JWT);
     const user = await User.findOne({ email: decoded.email });
 
@@ -104,6 +138,8 @@ export const login = async (req, res, next) => {
     res
       .cookie("access_token", token, {
         httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
       })
       .status(200)
       .json({ details: { ...otherDetails }, isAdmin });

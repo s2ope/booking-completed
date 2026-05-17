@@ -1,10 +1,16 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import useFetch from "../../hooks/useFetch";
 
 const Featured = () => {
   const { data, loading, error } = useFetch(
-    "/api/hotels/countByCity?cities=berlin,madrid,london"
+    "/hotels/countByCity?cities=berlin,madrid,london"
   );
+  const navigate = useNavigate();
+
+  const handleCityClick = (city) => {
+    navigate(`/destinations/${encodeURIComponent(city.name)}`);
+  };
 
   const cities = [
     {
@@ -44,7 +50,15 @@ const Featured = () => {
           {cities.map((city, index) => (
             <div
               key={index}
+              onClick={() => handleCityClick(city)}
               className="group relative text-white rounded-lg flex-none w-60 sm:w-64 h-44 sm:h-48 cursor-pointer transition-transform duration-300 hover:scale-105"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  handleCityClick(city);
+                }
+              }}
             >
               <img
                 src={city.imageUrl}
