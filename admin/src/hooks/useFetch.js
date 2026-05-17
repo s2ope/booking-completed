@@ -15,8 +15,9 @@ const useFetch = (url) => {
         setError(false);
       } catch (err) {
         setError(err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchData();
   }, [url]);
@@ -27,10 +28,13 @@ const useFetch = (url) => {
       const res = await api.get(url);
       setData(res.data);
       setError(false);
+      return res.data;
     } catch (err) {
       setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return { data, loading, error, reFetch };

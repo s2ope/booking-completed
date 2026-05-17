@@ -38,6 +38,12 @@ export const userColumns = [
     headerName: "Phone",
     width: 100,
   },
+  {
+    field: "isAdmin",
+    headerName: "Admin",
+    width: 90,
+    renderCell: (params) => (params.row.isAdmin ? "Yes" : "No"),
+  },
 ];
 
 export const hotelColumns = [
@@ -60,6 +66,11 @@ export const hotelColumns = [
   {
     field: "city",
     headerName: "City",
+    width: 100,
+  },
+  {
+    field: "cheapestPrice",
+    headerName: "Price",
     width: 100,
   },
 ];
@@ -85,5 +96,12 @@ export const roomColumns = [
     field: "maxPeople",
     headerName: "Max People",
     width: 100,
+  },
+  {
+    field: "roomNumbers",
+    headerName: "Numbers",
+    width: 160,
+    renderCell: (params) =>
+      params.row.roomNumbers?.map((room) => room.number).join(", ") || "",
   },
 ];

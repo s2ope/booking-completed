@@ -3,29 +3,27 @@ import {
   AreaChart,
   Area,
   XAxis,
+  YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-
-const data = [
-  { name: "January", Total: 1200 },
-  { name: "February", Total: 2100 },
-  { name: "March", Total: 800 },
-  { name: "April", Total: 1600 },
-  { name: "May", Total: 900 },
-  { name: "June", Total: 1700 },
-];
+import useFetch from "../../hooks/useFetch";
 
 const Chart = ({ aspect, title }) => {
+  const { data, loading, error } = useFetch("/admin/revenue?months=6");
+  const chartData = Array.isArray(data) ? data : [];
+
   return (
     <div className="chart">
       <div className="title">{title}</div>
+      {error && <div className="chartMessage">Revenue data unavailable.</div>}
+      {loading && <div className="chartMessage">Loading revenue...</div>}
       <ResponsiveContainer width="100%" aspect={aspect}>
         <AreaChart
           width={730}
           height={250}
-          data={data}
+          data={chartData}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
         >
           <defs>
@@ -35,11 +33,12 @@ const Chart = ({ aspect, title }) => {
             </linearGradient>
           </defs>
           <XAxis dataKey="name" stroke="gray" />
+          <YAxis stroke="gray" />
           <CartesianGrid strokeDasharray="3 3" className="chartGrid" />
-          <Tooltip />
+          <Tooltip formatter={(value) => `$${Number(value || 0).toLocaleString()}`} />
           <Area
             type="monotone"
-            dataKey="Total"
+            dataKey="total"
             stroke="#8884d8"
             fillOpacity={1}
             fill="url(#total)"

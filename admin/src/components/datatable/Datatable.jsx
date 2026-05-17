@@ -4,12 +4,13 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import useFetch from "../../hooks/useFetch";
 import { api } from "../../api/axios";
+import { showToast } from "../../helpers/ToastHelper";
 
 const Datatable = ({ columns }) => {
   const location = useLocation();
   const path = location.pathname.split("/")[1];
   const [list, setList] = useState([]);
-  const { data, loading, error } = useFetch(`/api/${path}`);
+  const { data, loading, error } = useFetch(`/${path}`);
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
@@ -21,10 +22,12 @@ const Datatable = ({ columns }) => {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/api/${path}/${id}`);
+      await api.delete(`/${path}/${id}`);
       setList(list.filter((item) => item._id !== id));
+      showToast("Deleted successfully");
     } catch (err) {
       console.error("Delete error:", err);
+      showToast(err.response?.data?.message || "Delete failed", "error");
     }
   };
 
@@ -71,7 +74,6 @@ const Datatable = ({ columns }) => {
         checkboxSelection
         getRowId={(row) => row?._id || `fallback-${Math.random()}`}
         loading={loading}
-        error={error}
         components={{
           NoRowsOverlay: () => (
             <div style={{ padding: "1rem", textAlign: "center" }}>

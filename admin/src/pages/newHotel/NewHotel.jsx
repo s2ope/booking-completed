@@ -3,6 +3,7 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
 import { useState } from "react";
+import axios from "axios";
 import { hotelInputs } from "../../formSource";
 import useFetch from "../../hooks/useFetch";
 import { api } from "../../api/axios";
@@ -16,7 +17,7 @@ const NewHotel = () => {
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { data, loading, error } = useFetch("/api/rooms");
+  const { data, loading, error } = useFetch("/rooms");
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -37,14 +38,9 @@ const NewHotel = () => {
   const validateForm = () => {
     for (const input of hotelInputs) {
       if (input.required && !info[input.id]) {
-        showToast("error", `Please fill in ${input.label}`);
+        showToast(`Please fill in ${input.label}`, "error");
         return false;
       }
-    }
-
-    if (!files || !files.length) {
-      showToast("error", "Please select at least one image");
-      return false;
     }
 
     return true;
@@ -57,32 +53,37 @@ const NewHotel = () => {
 
     setIsLoading(true);
     try {
-      const list = await Promise.all(
-        Object.values(files).map(async (file) => {
+      const selectedFiles = files ? Array.from(files) : [];
+      const list = selectedFiles.length
+        ? await Promise.all(
+            selectedFiles.map(async (file) => {
           const data = new FormData();
           data.append("file", file);
           data.append("upload_preset", "upload");
 
           try {
-            const uploadRes = await api.post(API_KEY, data);
+            const uploadRes = await axios.post(API_KEY, data);
             const { url } = uploadRes.data;
             return url;
           } catch (uploadErr) {
             throw new Error(`Failed to upload image: ${uploadErr.message}`);
           }
-        })
-      );
+            })
+          )
+        : [];
 
-      showToast("Images uploaded successfully");
+      if (list.length) showToast("Images uploaded successfully");
 
       const newhotel = {
         ...info,
+        cheapestPrice: Number(info.cheapestPrice),
+        rating: info.rating ? Number(info.rating) : undefined,
         featured: info.featured ?? false, // Ensure featured defaults to false if not set
         rooms: rooms.length > 0 ? rooms : [],
         photos: list,
       };
 
-      const response = await api.post("/api/hotels", newhotel);
+      const response = await api.post("/hotels", newhotel);
 
       if (response.data) {
         showToast("Hotel has been created successfully");
@@ -95,7 +96,7 @@ const NewHotel = () => {
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || err.message || "Failed to create hotel";
-      showToast("error", errorMessage);
+      showToast(errorMessage, "error");
       console.error("Hotel creation error:", err);
     } finally {
       setIsLoading(false);
@@ -118,7 +119,7 @@ const NewHotel = () => {
           <div className="left">
             <img
               src={
-                files
+                files?.[0]
                   ? URL.createObjectURL(files[0])
                   : "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg"
               }
@@ -153,6 +154,7 @@ const NewHotel = () => {
                     onChange={handleChange}
                     type={input.type}
                     placeholder={input.placeholder}
+                    value={info[input.id] || ""}
                     required={input.required}
                     disabled={isLoading}
                   />

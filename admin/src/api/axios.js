@@ -1,11 +1,15 @@
 import axios from "axios";
 
-// Dynamically set baseURL
-const baseURL = import.meta.env.DEV
-  ? "/api" // use Vite proxy in dev
-  : import.meta.env.VITE_API_URL; // full Render URL in production
-console.log(baseURL);
+const getBaseURL = () => {
+  if (import.meta.env.DEV) return "/api";
+
+  const apiURL = import.meta.env.VITE_API_URL || "";
+  if (!apiURL) return "/api";
+
+  return apiURL.endsWith("/api") ? apiURL : `${apiURL.replace(/\/$/, "")}/api`;
+};
+
 export const api = axios.create({
-  baseURL,
-  withCredentials: true, // only if using cookies
+  baseURL: getBaseURL(),
+  withCredentials: true,
 });

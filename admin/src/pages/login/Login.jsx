@@ -23,21 +23,21 @@ const Login = () => {
     e.preventDefault();
     dispatch({ type: "LOGIN_START" });
     try {
-      const res = await api.post("/api/auth/login", credentials);
+      const res = await api.post("/auth/login", credentials);
       if (res.data.isAdmin) {
         dispatch({ type: "LOGIN_SUCCESS", payload: res.data.details });
-        showToast("success", "Login Successful");
+        showToast("Login success", "success");
         localStorage.setItem("token", res.data.token);
         navigate("/");
       } else {
-        showToast("error", "You are not allowed!");
+        showToast("You are not allowed!", "warning");
         dispatch({
           type: "LOGIN_FAILURE",
           payload: { message: "You are not allowed!" },
         });
       }
     } catch (err) {
-      showToast("error", "Login Failed");
+      showToast("Login Failed", "error");
       dispatch({ type: "LOGIN_FAILURE", payload: err.response.data });
     }
   };

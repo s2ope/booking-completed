@@ -14,7 +14,14 @@ const NewRoom = () => {
   const [rooms, setRooms] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data, loading, error } = useFetch("/api/hotels");
+  const { data, loading, error } = useFetch("/hotels");
+
+  const parseRoomNumbers = () =>
+    rooms
+      .split(/[,\n]+/)
+      .map((room) => Number(room.trim()))
+      .filter((room) => Number.isFinite(room))
+      .map((room) => ({ number: room }));
 
   const handleChange = (e) => {
     setInfo((prev) => ({ ...prev, [e.target.id]: e.target.value }));
@@ -22,19 +29,24 @@ const NewRoom = () => {
 
   const validateForm = () => {
     if (!hotelId) {
-      showToast("error", "Please select a hotel");
+      showToast("Please select a hotel", "error");
       return false;
     }
 
     if (!rooms) {
-      showToast("error", "Please enter room numbers");
+      showToast("Please enter room numbers", "error");
+      return false;
+    }
+
+    if (!parseRoomNumbers().length) {
+      showToast("Please enter at least one valid room number", "error");
       return false;
     }
 
     // Check if all required fields in info are filled
     for (const input of roomInputs) {
       if (input.required && !info[input.id]) {
-        showToast("error", `Please fill in ${input.label}`);
+        showToast(`Please fill in ${input.label}`, "error");
         return false;
       }
     }
@@ -49,12 +61,14 @@ const NewRoom = () => {
 
     try {
       setIsSubmitting(true);
-      const roomNumbers = rooms
-        .split(",")
-        .map((room) => ({ number: room.trim() }))
-        .filter((room) => room.number); // Remove empty entries
+      const roomNumbers = parseRoomNumbers();
 
-      await api.post(`/api/rooms/${hotelId}`, { ...info, roomNumbers });
+      await api.post(`/rooms/${hotelId}`, {
+        ...info,
+        price: Number(info.price),
+        maxPeople: Number(info.maxPeople),
+        roomNumbers,
+      });
       showToast("Room has been created successfully", "success");
 
       // Reset form
@@ -68,7 +82,7 @@ const NewRoom = () => {
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || "Failed to create room";
-      showToast("error", errorMessage);
+      showToast(errorMessage, "error");
       console.error("Error creating room:", err);
     } finally {
       setIsSubmitting(false);
@@ -101,6 +115,7 @@ const NewRoom = () => {
                     type={input.type}
                     placeholder={input.placeholder}
                     onChange={handleChange}
+                    value={info[input.id] || ""}
                     required={input.required}
                   />
                 </div>

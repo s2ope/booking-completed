@@ -11,31 +11,33 @@ const CLOUDINARY_URL = import.meta.env.VITE_CLOUDINARY_API_URL;
 
 const New = ({ inputs, title }) => {
   const [file, setFile] = useState("");
-  const [info, setInfo] = useState({});
+  const [info, setInfo] = useState({ isAdmin: false });
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
-    setInfo((prev) => ({ ...prev, [e.target.id]: e.target.value }));
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setInfo((prev) => ({ ...prev, [e.target.id]: value }));
   };
 
   const validateForm = () => {
     // Check required fields
     for (const input of inputs) {
       if (input.required && !info[input.id]) {
-        showToast("error", `Please fill in ${input.label}`);
+        showToast(`Please fill in ${input.label}`, "error");
         return false;
       }
     }
 
     // Validate email format if email field exists
     if (info.email && !/\S+@\S+\.\S+/.test(info.email)) {
-      showToast("error", "Please enter a valid email address");
+      showToast("Please enter a valid email address", "error");
       return false;
     }
 
     // Validate password if it exists
     if (info.password && info.password.length < 6) {
-      showToast("error", "Password must be at least 6 characters long");
+      showToast("Password must be at least 6 characters long", "error");
       return false;
     }
 
@@ -62,7 +64,7 @@ const New = ({ inputs, title }) => {
           imageUrl = uploadRes.data.url;
           showToast("Image uploaded successfully");
         } catch (error) {
-          showToast("error", "Failed to upload image");
+          showToast("Failed to upload image", "error");
           console.error("Image upload error:", error);
           setIsLoading(false);
           return;
@@ -74,20 +76,20 @@ const New = ({ inputs, title }) => {
         img: imageUrl || "",
       };
 
-      const response = await api.post("/api/auth/register", newUser);
+      const response = await api.post("/auth/register", newUser);
 
       if (response.data) {
         showToast("User registered successfully");
         // Reset form
         setFile("");
-        setInfo({});
+        setInfo({ isAdmin: false });
         // Reset form inputs
         const formElement = e.target.closest("form");
         if (formElement) formElement.reset();
       }
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Registration failed";
-      showToast("error", errorMessage);
+      showToast(errorMessage, "error");
       console.error("Registration error:", err);
     } finally {
       setIsLoading(false);
@@ -139,11 +141,29 @@ const New = ({ inputs, title }) => {
                     type={input.type}
                     placeholder={input.placeholder}
                     id={input.id}
+                    value={info[input.id] || ""}
                     required={input.required}
                     disabled={isLoading}
                   />
                 </div>
               ))}
+              <div className="formInput">
+                <label>Admin Access</label>
+                <select
+                  id="isAdmin"
+                  value={String(info.isAdmin)}
+                  onChange={(e) =>
+                    setInfo((prev) => ({
+                      ...prev,
+                      isAdmin: e.target.value === "true",
+                    }))
+                  }
+                  disabled={isLoading}
+                >
+                  <option value="false">No</option>
+                  <option value="true">Yes</option>
+                </select>
+              </div>
               <button
                 onClick={handleClick}
                 disabled={isLoading}
