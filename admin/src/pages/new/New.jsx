@@ -3,11 +3,9 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
 import { useState } from "react";
-import axios from "axios";
 import { api } from "../../api/axios";
 import { showToast } from "../../helpers/ToastHelper";
-
-const CLOUDINARY_URL = import.meta.env.VITE_CLOUDINARY_API_URL;
+import { uploadImage } from "../../utils/uploadImage";
 
 const New = ({ inputs, title }) => {
   const [file, setFile] = useState("");
@@ -55,16 +53,11 @@ const New = ({ inputs, title }) => {
 
       // Upload image if file is selected
       if (file) {
-        const data = new FormData();
-        data.append("file", file);
-        data.append("upload_preset", "upload");
-
         try {
-          const uploadRes = await axios.post(CLOUDINARY_URL, data);
-          imageUrl = uploadRes.data.url;
+          imageUrl = await uploadImage(file);
           showToast("Image uploaded successfully");
         } catch (error) {
-          showToast("Failed to upload image", "error");
+          showToast(error.message || "Failed to upload image", "error");
           console.error("Image upload error:", error);
           setIsLoading(false);
           return;

@@ -1,11 +1,12 @@
 import "./profile.scss";
 import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/axios";
 import { AuthContext } from "../../context/AuthContext";
 import { showToast } from "../../helpers/ToastHelper";
+import { uploadImage } from "../../utils/uploadImage";
 
 const fallbackAvatar =
   "https://images.pexels.com/photos/941693/pexels-photo-941693.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500";
@@ -23,6 +24,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
 
   useEffect(() => {
     if (!user) {
@@ -60,14 +62,30 @@ const Profile = () => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleAvatarChange = (e) => {
+    const selectedFile = e.target.files?.[0] || null;
+    setAvatarFile(selectedFile);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
 
     try {
-      const response = await api.put("/users/me", form);
+      const uploadedImage = avatarFile ? await uploadImage(avatarFile) : "";
+      const response = await api.put("/users/me", {
+        ...form,
+        img: uploadedImage || form.img,
+      });
       setProfile(response.data);
+      setForm({
+        phone: response.data.phone || "",
+        city: response.data.city || "",
+        country: response.data.country || "",
+        img: response.data.img || "",
+      });
+      setAvatarFile(null);
       dispatch({
         type: "LOGIN_SUCCESS",
         payload: { ...user, ...response.data },
@@ -82,7 +100,17 @@ const Profile = () => {
     }
   };
 
-  const avatar = form.img || profile?.img || fallbackAvatar;
+  const avatarPreview = useMemo(
+    () => (avatarFile ? URL.createObjectURL(avatarFile) : ""),
+    [avatarFile]
+  );
+  const avatar = avatarPreview || form.img || profile?.img || fallbackAvatar;
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
 
   return (
     <div className="profile">
@@ -104,6 +132,25 @@ const Profile = () => {
                 <img src={avatar} alt={profile?.username || "Admin"} />
                 <h2>{profile?.username}</h2>
                 <span>{profile?.isAdmin ? "Admin" : "User"}</span>
+                <label className="avatarUpload">
+                  Choose Image
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    disabled={saving}
+                  />
+                </label>
+                {avatarFile && (
+                  <button
+                    type="button"
+                    className="clearAvatar"
+                    onClick={() => setAvatarFile(null)}
+                    disabled={saving}
+                  >
+                    Remove Selection
+                  </button>
+                )}
               </div>
 
               <div className="profileForm">

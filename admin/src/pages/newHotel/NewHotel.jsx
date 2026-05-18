@@ -3,13 +3,11 @@ import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
 import { useState } from "react";
-import axios from "axios";
 import { hotelInputs } from "../../formSource";
 import useFetch from "../../hooks/useFetch";
 import { api } from "../../api/axios";
 import { showToast } from "../../helpers/ToastHelper";
-
-const API_KEY = import.meta.env.VITE_CLOUDINARY_API_URL;
+import { uploadImage } from "../../utils/uploadImage";
 
 const NewHotel = () => {
   const [files, setFiles] = useState("");
@@ -57,17 +55,11 @@ const NewHotel = () => {
       const list = selectedFiles.length
         ? await Promise.all(
             selectedFiles.map(async (file) => {
-          const data = new FormData();
-          data.append("file", file);
-          data.append("upload_preset", "upload");
-
-          try {
-            const uploadRes = await axios.post(API_KEY, data);
-            const { url } = uploadRes.data;
-            return url;
-          } catch (uploadErr) {
-            throw new Error(`Failed to upload image: ${uploadErr.message}`);
-          }
+              try {
+                return await uploadImage(file);
+              } catch (uploadErr) {
+                throw new Error(`Failed to upload image: ${uploadErr.message}`);
+              }
             })
           )
         : [];

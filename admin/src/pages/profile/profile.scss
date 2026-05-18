@@ -60,6 +60,39 @@
             font-size: 13px;
             font-weight: 700;
           }
+
+          .avatarUpload {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 8px 10px;
+            background-color: #7451f8;
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+
+            input {
+              display: none;
+            }
+          }
+
+          .clearAvatar {
+            display: block;
+            width: auto;
+            margin: 10px auto 0;
+            padding: 6px 8px;
+            border: none;
+            background-color: transparent;
+            color: #d32f2f;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+
+            &:disabled {
+              cursor: not-allowed;
+              opacity: 0.7;
+            }
+          }
         }
 
         .profileForm {
