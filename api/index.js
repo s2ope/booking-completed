@@ -21,6 +21,8 @@ const defaultCorsOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
+  "https://mern-admin-ten.vercel.app",
+  "https://mern-client-iota.vercel.app",
 ];
 
 const envCorsOrigins = (process.env.CORS_ORIGINS || "")
