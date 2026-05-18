@@ -2,7 +2,7 @@ import "./new.scss";
 import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/axios";
 import { showToast } from "../../helpers/ToastHelper";
 import { uploadImage } from "../../utils/uploadImage";
@@ -11,6 +11,13 @@ const New = ({ inputs, title }) => {
   const [file, setFile] = useState("");
   const [info, setInfo] = useState({ isAdmin: false });
   const [isLoading, setIsLoading] = useState(false);
+  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const handleChange = (e) => {
     const value =
@@ -101,9 +108,8 @@ const New = ({ inputs, title }) => {
           <div className="left">
             <img
               src={
-                file
-                  ? URL.createObjectURL(file)
-                  : "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg"
+                previewUrl ||
+                "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg"
               }
               alt="User"
             />
@@ -120,6 +126,7 @@ const New = ({ inputs, title }) => {
                   onChange={(e) => setFile(e.target.files[0])}
                   style={{ display: "none" }}
                   accept="image/*"
+                  disabled={isLoading}
                 />
               </div>
 

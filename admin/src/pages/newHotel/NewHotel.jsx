@@ -2,7 +2,7 @@ import "./newHotel.scss";
 import Sidebar from "../../components/sidebar/Sidebar";
 import Navbar from "../../components/navbar/Navbar";
 import DriveFolderUploadOutlinedIcon from "@mui/icons-material/DriveFolderUploadOutlined";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { hotelInputs } from "../../formSource";
 import useFetch from "../../hooks/useFetch";
 import { api } from "../../api/axios";
@@ -14,6 +14,16 @@ const NewHotel = () => {
   const [info, setInfo] = useState({ featured: false });
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const previewUrl = useMemo(
+    () => (files?.[0] ? URL.createObjectURL(files[0]) : ""),
+    [files]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const { data, loading, error } = useFetch("/rooms");
 
@@ -111,9 +121,8 @@ const NewHotel = () => {
           <div className="left">
             <img
               src={
-                files?.[0]
-                  ? URL.createObjectURL(files[0])
-                  : "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg"
+                previewUrl ||
+                "https://icon-library.com/images/no-image-icon/no-image-icon-0.jpg"
               }
               alt="Hotel preview"
             />
