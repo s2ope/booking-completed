@@ -9,10 +9,12 @@ import ListOutlinedIcon from "@mui/icons-material/ListOutlined";
 import { DarkModeContext } from "../../context/darkModeContext";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const { dispatch } = useContext(DarkModeContext);
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const avatar =
     user?.img ||
     "https://images.pexels.com/photos/941693/pexels-photo-941693.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500";
@@ -40,14 +42,18 @@ const Navbar = () => {
             <ChatBubbleOutlineOutlinedIcon className="icon" />
             <div className="counter">2</div>
           </div> */}
-          <div className="item">
+          <button
+            type="button"
+            className="item profileButton"
+            onClick={() => navigate("/profile")}
+          >
             <img
               src={avatar}
               alt={user?.username || "Admin"}
               className="avatar"
             />
             {user?.username && <span className="username">{user.username}</span>}
-          </div>
+          </button>
         </div>
       </div>
     </div>
