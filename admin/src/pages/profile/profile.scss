@@ -1,0 +1,147 @@
+.profile {
+  width: 100%;
+  display: flex;
+
+  .profileContainer {
+    flex: 6;
+
+    .profileHeader {
+      -webkit-box-shadow: 2px 4px 10px 1px rgba(0, 0, 0, 0.47);
+      box-shadow: 2px 4px 10px 1px rgba(201, 201, 201, 0.47);
+      padding: 10px;
+      margin: 20px;
+
+      h1 {
+        color: lightgray;
+        font-size: 20px;
+      }
+    }
+
+    .profileContent {
+      margin: 20px;
+
+      .profileCard {
+        -webkit-box-shadow: 2px 4px 10px 1px rgba(0, 0, 0, 0.47);
+        box-shadow: 2px 4px 10px 1px rgba(201, 201, 201, 0.47);
+        padding: 20px;
+        display: flex;
+        gap: 30px;
+        align-items: flex-start;
+
+        &.message,
+        &.error {
+          display: block;
+          color: gray;
+        }
+
+        &.error {
+          color: #d32f2f;
+        }
+
+        .profilePreview {
+          width: 180px;
+          text-align: center;
+
+          img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+          }
+
+          h2 {
+            margin: 10px 0 4px;
+            color: #555;
+            font-size: 18px;
+          }
+
+          span {
+            color: #7451f8;
+            font-size: 13px;
+            font-weight: 700;
+          }
+        }
+
+        .profileForm {
+          flex: 1;
+
+          .profileFields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+            gap: 24px 30px;
+
+            label {
+              display: flex;
+              flex-direction: column;
+              color: gray;
+              font-size: 13px;
+              font-weight: 700;
+
+              input {
+                width: 100%;
+                padding: 8px 5px;
+                border: none;
+                border-bottom: 1px solid gray;
+                outline: none;
+                font-size: 14px;
+                margin-top: 6px;
+                color: #555;
+
+                &:disabled {
+                  background-color: #f7f7f7;
+                  color: #888;
+                }
+              }
+            }
+          }
+
+          .profileError {
+            color: #d32f2f;
+            font-size: 14px;
+            margin: 18px 0 0;
+          }
+
+          button {
+            width: 150px;
+            padding: 10px;
+            border: none;
+            background-color: teal;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+
+            &:disabled {
+              cursor: not-allowed;
+              opacity: 0.7;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .profile {
+    .profileContainer {
+      .profileContent {
+        .profileCard {
+          flex-direction: column;
+
+          .profilePreview {
+            width: 100%;
+          }
+
+          .profileForm {
+            width: 100%;
+
+            .profileFields {
+              grid-template-columns: 1fr;
+            }
+          }
+        }
+      }
+    }
+  }
+}

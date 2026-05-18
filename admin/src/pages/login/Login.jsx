@@ -7,8 +7,8 @@ import { showToast } from "../../helpers/ToastHelper";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
-    username: undefined,
-    password: undefined,
+    username: "",
+    password: "",
   });
 
   const { loading, error, dispatch } = useContext(AuthContext);
@@ -27,7 +27,6 @@ const Login = () => {
       if (res.data.isAdmin) {
         dispatch({ type: "LOGIN_SUCCESS", payload: res.data.details });
         showToast("Login success", "success");
-        localStorage.setItem("token", res.data.token);
         navigate("/");
       } else {
         showToast("You are not allowed!", "warning");
@@ -37,8 +36,9 @@ const Login = () => {
         });
       }
     } catch (err) {
-      showToast("Login Failed", "error");
-      dispatch({ type: "LOGIN_FAILURE", payload: err.response.data });
+      const message = err.response?.data?.message || "Login failed";
+      showToast(message, "error");
+      dispatch({ type: "LOGIN_FAILURE", payload: { message } });
     }
   };
 
@@ -51,6 +51,8 @@ const Login = () => {
           id="username"
           onChange={handleChange}
           className="lInput"
+          value={credentials.username}
+          autoComplete="username"
         />
         <input
           type="password"
@@ -58,6 +60,8 @@ const Login = () => {
           id="password"
           onChange={handleChange}
           className="lInput"
+          value={credentials.password}
+          autoComplete="current-password"
         />
         <button disabled={loading} onClick={handleClick} className="lButton">
           Login

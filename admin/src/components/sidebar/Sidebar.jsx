@@ -15,17 +15,24 @@ import { Link, useNavigate } from "react-router-dom";
 import { DarkModeContext } from "../../context/darkModeContext";
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import { api } from "../../api/axios";
+import { showToast } from "../../helpers/ToastHelper";
 
 const Sidebar = () => {
   const { dispatch } = useContext(DarkModeContext);
   const { dispatch: authDispatch } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    authDispatch({ type: "LOGOUT" });
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+      showToast("Logged out successfully", "success");
+    } catch (err) {
+      showToast("Logged out locally", "warning");
+    } finally {
+      authDispatch({ type: "LOGOUT" });
+      navigate("/login");
+    }
   };
 
   return (
@@ -66,10 +73,12 @@ const Sidebar = () => {
             </li>
           </Link>
           <p className="title">USER</p>
-          <li>
-            <AccountCircleOutlinedIcon className="icon" />
-            <span>Profile</span>
-          </li>
+          <Link to="/profile" style={{ textDecoration: "none" }}>
+            <li>
+              <AccountCircleOutlinedIcon className="icon" />
+              <span>Profile</span>
+            </li>
+          </Link>
           <li onClick={handleLogout}>
             <ExitToAppIcon className="icon" />
             <span>Logout</span>

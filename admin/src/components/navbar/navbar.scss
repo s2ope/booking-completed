@@ -35,6 +35,14 @@
           width: 30px;
           height: 30px;
           border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .username {
+          margin-left: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #555;
         }
 
         .counter {
