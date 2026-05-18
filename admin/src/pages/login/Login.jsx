@@ -36,7 +36,8 @@ const Login = () => {
         });
       }
     } catch (err) {
-      const message = err.response?.data?.message || "Login failed";
+      const message =
+        err.response?.data?.message || err.message || "Login failed";
       showToast(message, "error");
       dispatch({ type: "LOGIN_FAILURE", payload: { message } });
     }
