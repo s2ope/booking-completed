@@ -10,6 +10,7 @@ const sanitizeProfileUpdate = (body) => ({
   phone: body.phone || "",
   city: body.city || "",
   country: body.country || "",
+  img: body.img || "",
 });
 
 const sanitizeAdminUserUpdate = (body, isAdmin) => {

@@ -16,12 +16,42 @@ import subscribeRoute from "./src/controllers/email.controller.js";
 
 dotenv.config();
 
+const defaultCorsOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5173",
+];
+
+const envCorsOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedCorsOrigins = [...new Set([...defaultCorsOrigins, ...envCorsOrigins])];
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedCorsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
+  credentials: true,
+};
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const server = createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: allowedCorsOrigins,
+    credentials: true,
+  },
+});
 
 // MongoDB connection
 const MONGO_URI = process.env.MONGO;
@@ -34,19 +64,7 @@ mongoose
   .catch((error) => console.error("Error connecting to MongoDB:", error));
 
 // Middleware
-// Allow your deployed frontend sites to talk to your backend
-
-// CORS config
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173", // local frontend during dev
-      // "https://mern-client-iota.vercel.app",
-      // "https://mern-admin-ten.vercel.app",
-    ],
-    credentials: true,
-  }),
-);
+app.use(cors(corsOptions));
 app.use(cookieParser());
 
 // ✅ Test route for the root URL (so / won't show 404)

@@ -3,11 +3,12 @@ import {
   register,
   verifyEmail,
   login,
+  logout,
   resetPasswordRequest,
   resetPassword,
   verifyResetCode,
 } from "../controllers/auth.controllers.js";
-import { verifyToken, verifyUser, verifyAdmin } from "../utils/verifyToken.js";
+import { verifyToken } from "../utils/verifyToken.js";
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.post("/register", register);
 router.post("/verify-email", verifyEmail);
 router.get("/verify-email", verifyEmail);
 router.post("/login", login);
+router.post("/logout", logout);
 
 // Forgot password and reset password routes
 router.post("/forgot-password", resetPasswordRequest); // For initiating password reset

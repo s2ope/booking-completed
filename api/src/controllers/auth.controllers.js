@@ -7,6 +7,15 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const useSecureCookies =
+  process.env.NODE_ENV === "production" || process.env.COOKIE_SECURE === "true";
+
+const authCookieOptions = {
+  httpOnly: true,
+  sameSite: useSecureCookies ? "none" : "lax",
+  secure: useSecureCookies,
+};
+
 const canAssignAdminRole = (req) => {
   const token = req.cookies?.access_token;
   if (!token) return false;
@@ -136,16 +145,19 @@ export const login = async (req, res, next) => {
 
     const { password, isAdmin, ...otherDetails } = user._doc;
     res
-      .cookie("access_token", token, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-      })
+      .cookie("access_token", token, authCookieOptions)
       .status(200)
       .json({ details: { ...otherDetails }, isAdmin });
   } catch (err) {
     next(err);
   }
+};
+
+export const logout = (req, res) => {
+  res
+    .clearCookie("access_token", authCookieOptions)
+    .status(200)
+    .json({ message: "Logged out successfully" });
 };
 
 // Request password reset function
