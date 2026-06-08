@@ -1,0 +1,263 @@
+.bookingRequests {
+  display: flex;
+  width: 100%;
+
+  .bookingRequestsContainer {
+    flex: 6;
+  }
+
+  .bookingRequestsContent {
+    padding: 20px;
+  }
+
+  .bookingRequestsHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+
+    h1 {
+      margin: 0;
+      color: #555;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    span {
+      display: inline-block;
+      margin-top: 4px;
+      color: #888;
+      font-size: 13px;
+    }
+
+    button {
+      border: 1px solid #7451f8;
+      background: white;
+      color: #7451f8;
+      border-radius: 5px;
+      padding: 7px 12px;
+      cursor: pointer;
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+  }
+
+  .bookingRequestsState {
+    border: 1px solid #e6e3e3;
+    border-radius: 5px;
+    color: #777;
+    padding: 24px;
+    text-align: center;
+
+    &.error {
+      color: crimson;
+      background: rgba(220, 20, 60, 0.05);
+    }
+  }
+
+  .bookingFilters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #e6e3e3;
+      background: white;
+      color: #555;
+      border-radius: 5px;
+      padding: 7px 11px;
+      cursor: pointer;
+
+      span {
+        min-width: 22px;
+        border-radius: 999px;
+        background: #f4f3f8;
+        color: #7451f8;
+        font-size: 12px;
+        line-height: 18px;
+        text-align: center;
+      }
+
+      &.active {
+        border-color: #7451f8;
+        background: rgba(116, 81, 248, 0.08);
+        color: #7451f8;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+      }
+    }
+  }
+
+  .requestList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .requestRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    border: 1px solid #e6e3e3;
+    border-radius: 5px;
+    padding: 16px;
+    background: white;
+  }
+
+  .requestMain {
+    min-width: 0;
+  }
+
+  .requestTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #444;
+    font-size: 17px;
+    font-weight: 600;
+
+    b {
+      color: #999;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .statusBadge {
+      border-radius: 999px;
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 600;
+      padding: 3px 8px;
+      text-transform: capitalize;
+
+      &.pending {
+        background: rgba(255, 193, 7, 0.14);
+        color: #9a6700;
+      }
+
+      &.confirmed {
+        background: rgba(0, 128, 0, 0.1);
+        color: green;
+      }
+
+      &.completed {
+        background: rgba(25, 118, 210, 0.1);
+        color: #1976d2;
+      }
+
+      &.canceled {
+        background: rgba(220, 20, 60, 0.09);
+        color: crimson;
+      }
+    }
+  }
+
+  .requestMeta,
+  .requestDetails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 9px;
+    color: #666;
+    font-size: 13px;
+  }
+
+  .requestDetails {
+    color: #444;
+    font-weight: 500;
+  }
+
+  .paymentBadge {
+    border-radius: 999px;
+    padding: 2px 8px;
+    text-transform: capitalize;
+
+    &.paid {
+      background: rgba(0, 128, 0, 0.08);
+      color: green;
+    }
+
+    &.unpaid {
+      background: rgba(255, 193, 7, 0.14);
+      color: #9a6700;
+    }
+  }
+
+  .requestEmail {
+    color: #444;
+
+    &.missing {
+      color: #b26a00;
+    }
+  }
+
+  .requestNote {
+    margin: 12px 0 0;
+    color: #777;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .requestActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    button {
+      border-radius: 5px;
+      padding: 7px 12px;
+      cursor: pointer;
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+      }
+    }
+
+    .acceptButton {
+      border: 1px solid green;
+      color: green;
+      background: rgba(0, 128, 0, 0.06);
+    }
+
+    .declineButton {
+      border: 1px solid crimson;
+      color: crimson;
+      background: rgba(220, 20, 60, 0.06);
+    }
+
+    .readOnlyStatus {
+      border: 1px solid #e6e3e3;
+      border-radius: 5px;
+      color: #777;
+      font-size: 13px;
+      padding: 7px 12px;
+      text-transform: capitalize;
+    }
+  }
+}
+
+@media (max-width: 700px) {
+  .bookingRequests {
+    .bookingRequestsHeader,
+    .requestRow {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .requestActions {
+      justify-content: flex-start;
+    }
+  }
+}

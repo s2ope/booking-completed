@@ -6,6 +6,7 @@ import New from "./pages/new/New";
 import NewHotel from "./pages/newHotel/NewHotel";
 import NewRoom from "./pages/newRoom/NewRoom";
 import Profile from "./pages/profile/Profile";
+import BookingRequests from "./pages/bookingRequests/BookingRequests";
 
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { productInputs, userInputs } from "./formSource";
@@ -154,6 +155,14 @@ function App() {
                 }
               />
             </Route>
+            <Route
+              path="booking-requests"
+              element={
+                <ProtectedRoute>
+                  <BookingRequests />
+                </ProtectedRoute>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>

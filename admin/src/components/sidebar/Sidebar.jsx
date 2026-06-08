@@ -3,6 +3,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import CreditCardIcon from "@mui/icons-material/CreditCard";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import StoreIcon from "@mui/icons-material/Store";
 import InsertChartIcon from "@mui/icons-material/InsertChart";
 import SettingsApplicationsIcon from "@mui/icons-material/SettingsApplications";
@@ -70,6 +71,12 @@ const Sidebar = () => {
             <li>
               <CreditCardIcon className="icon" />
               <span>Rooms</span>
+            </li>
+          </Link>
+          <Link to="/booking-requests" style={{ textDecoration: "none" }}>
+            <li>
+              <EventAvailableIcon className="icon" />
+              <span>Bookings</span>
             </li>
           </Link>
           <p className="title">USER</p>
