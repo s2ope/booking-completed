@@ -109,6 +109,9 @@ export const createMailerTransport = () => {
       user: getEmailUser(),
       pass: getEmailPassword(),
     },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 };
 
