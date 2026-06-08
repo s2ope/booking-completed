@@ -14,6 +14,15 @@ const BookingSchema = new mongoose.Schema({
     enum: ["pending", "confirmed", "completed", "canceled"],
     default: "pending",
   },
+  paymentStatus: {
+    type: String,
+    enum: ["unpaid", "paid"],
+    default: "unpaid",
+  },
+  stripeCheckoutSessionId: String,
+  stripePaymentIntentId: String,
+  paidAt: Date,
+  confirmationEmailSentAt: Date,
   specialRequests: String,
   createdAt: { type: Date, default: Date.now },
 });

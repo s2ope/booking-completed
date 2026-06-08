@@ -2,8 +2,8 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { createError } from "../utils/error.js";
 import jsonwebtoken from "jsonwebtoken";
-import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import { sendMail } from "../utils/mailer.js";
 
 dotenv.config();
 
@@ -60,33 +60,22 @@ export const register = async (req, res, next) => {
     const verificationToken = jsonwebtoken.sign(
       { email: newUser.email },
       process.env.JWT,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
     let emailSent = false;
 
-    if (process.env.EMAIL_USERNAME && process.env.EMAIL_PASSWORD) {
-      try {
-        const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            user: process.env.EMAIL_USERNAME,
-            pass: process.env.EMAIL_PASSWORD,
-          },
-        });
-
-        await transporter.sendMail({
-          from: process.env.EMAIL_USERNAME,
-          to: newUser.email,
-          subject: "Email Verification",
-          text: `Please verify your email by visiting: ${req.protocol}://${req.get(
-            "host"
-          )}/api/auth/verify-email?token=${verificationToken}`,
-        });
-        emailSent = true;
-      } catch (error) {
-        console.error("Verification email failed:", error.message);
-      }
+    try {
+      await sendMail({
+        to: newUser.email,
+        subject: "Email Verification",
+        text: `Please verify your email by visiting: ${req.protocol}://${req.get(
+          "host",
+        )}/api/auth/verify-email?token=${verificationToken}`,
+      });
+      emailSent = true;
+    } catch (error) {
+      console.error("Verification email failed:", error.message);
     }
 
     const { password, ...details } = newUser._doc;
@@ -133,14 +122,14 @@ export const login = async (req, res, next) => {
 
     const isPasswordCorrect = await bcrypt.compare(
       req.body.password,
-      user.password
+      user.password,
     );
     if (!isPasswordCorrect)
       return next(createError(400, "Wrong username or password!"));
 
     const token = jsonwebtoken.sign(
       { id: user._id, isAdmin: user.isAdmin },
-      process.env.JWT
+      process.env.JWT,
     );
 
     const { password, isAdmin, ...otherDetails } = user._doc;
@@ -171,37 +160,26 @@ export const resetPasswordRequest = async (req, res, next) => {
     const resetToken = jsonwebtoken.sign(
       { email: user.email },
       process.env.JWT,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
+    try {
+      await sendMail({
+        to: user.email,
+        subject: "Password Reset",
+        text: `To reset your password, please click the following link:
+        https://mern-backend-j4gu.onrender.com/api/auth/reset-password?token=${resetToken}`,
+      });
 
-    const mailOptions = {
-      from: process.env.EMAIL_USERNAME,
-      to: user.email,
-      subject: "Password Reset",
-      text: `To reset your password, please click the following link: 
-      https://mern-backend-j4gu.onrender.com/api/auth/reset-password?token=${resetToken}`,
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending email:", error);
-        return res
-          .status(500)
-          .json({ error: "Error sending email. Please try again later." });
-      }
-      console.log("Password reset email sent:", info.response);
       res
         .status(200)
         .send("Password reset email sent. Please check your inbox.");
-    });
+    } catch (error) {
+      console.error("Error sending email:", error.message);
+      res
+        .status(500)
+        .json({ error: "Error sending email. Please try again later." });
+    }
   } catch (err) {
     next(err);
   }
@@ -256,13 +234,62 @@ export const resetPassword = async (req, res, next) => {
   } catch (err) {
     if (err.name === "TokenExpiredError") {
       return next(
-        createError(400, "Reset token has expired. Please request a new one.")
+        createError(400, "Reset token has expired. Please request a new one."),
       );
     } else if (err.name === "JsonWebTokenError") {
       return next(
-        createError(400, "Invalid reset token. Please request a new one.")
+        createError(400, "Invalid reset token. Please request a new one."),
       );
     }
     next(err);
+  }
+};
+
+import { OAuth2Client } from "google-auth-library";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+export const googleAuth = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    const { email, name, picture, sub } = payload;
+
+    let user = await User.findOne({ email });
+
+    // CREATE USER IF NOT EXISTS
+    if (!user) {
+      user = new User({
+        username: name.replace(/\s/g, "_").toLowerCase(),
+        email,
+        password: "", // IMPORTANT: Google users have no password
+        img: picture,
+        isEmailVerified: true,
+      });
+
+      await user.save();
+    }
+
+    const jwtToken = jsonwebtoken.sign(
+      { id: user._id, isAdmin: user.isAdmin },
+      process.env.JWT,
+    );
+
+    const { password, ...otherDetails } = user._doc;
+
+    res.cookie("access_token", jwtToken, authCookieOptions).status(200).json({
+      details: otherDetails,
+      isAdmin: user.isAdmin,
+    });
+  } catch (err) {
+    console.error("Google Auth Error:", err);
+    next(createError(500, "Google authentication failed"));
   }
 };

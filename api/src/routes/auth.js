@@ -7,6 +7,7 @@ import {
   resetPasswordRequest,
   resetPassword,
   verifyResetCode,
+  googleAuth,
 } from "../controllers/auth.controllers.js";
 import { verifyToken } from "../utils/verifyToken.js";
 
@@ -19,6 +20,7 @@ router.get("/verify-email", verifyEmail);
 router.post("/login", login);
 router.post("/logout", logout);
 
+router.post("/google", googleAuth);
 // Forgot password and reset password routes
 router.post("/forgot-password", resetPasswordRequest); // For initiating password reset
 router.post("/reset-password", resetPassword); // For completing password reset

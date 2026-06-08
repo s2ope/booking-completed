@@ -26,7 +26,7 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
     },
     isEmailVerified: {
       type: Boolean,
@@ -46,7 +46,7 @@ const UserSchema = new mongoose.Schema(
     resetPasswordToken: String, // For storing password reset token
     resetPasswordExpires: Date, // For storing expiration time of reset token
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("User", UserSchema);

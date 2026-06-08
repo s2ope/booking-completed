@@ -13,6 +13,7 @@ import roomsRoute from "./src/routes/rooms.js";
 import bookingsRoute from "./src/routes/bookings.js";
 import adminRoute from "./src/routes/admin.js";
 import subscribeRoute from "./src/controllers/email.controller.js";
+import paymentRoutes from "./src/routes/paymentRoutes.js";
 
 dotenv.config();
 
@@ -30,7 +31,9 @@ const envCorsOrigins = (process.env.CORS_ORIGINS || "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-const allowedCorsOrigins = [...new Set([...defaultCorsOrigins, ...envCorsOrigins])];
+const allowedCorsOrigins = [
+  ...new Set([...defaultCorsOrigins, ...envCorsOrigins]),
+];
 
 const corsOptions = {
   origin(origin, callback) {
@@ -108,6 +111,8 @@ app.use("/api/rooms", roomsRoute);
 app.use("/api/bookings", bookingsRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/subscribe", subscribeRoute);
+
+app.use("/api/checkout", paymentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

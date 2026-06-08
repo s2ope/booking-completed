@@ -1,6 +1,6 @@
 import express from "express";
-import nodemailer from "nodemailer";
 import Subscriber from "../models/Subscriber.js";
+import { sendMail } from "../utils/mailer.js";
 
 const router = express.Router();
 
@@ -10,28 +10,13 @@ const validateEmail = (email) => {
 };
 
 const sendConfirmationEmail = async (email) => {
-  if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
-    return false;
-  }
-
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USERNAME,
+    return await sendMail({
       to: email,
       subject: "Mamabooking Subscription Confirmation",
       text: "Thank you for subscribing to Mamabooking deals.",
       html: "<p>Thank you for subscribing to Mamabooking deals.</p>",
     });
-
-    return true;
   } catch (error) {
     console.error("Subscription email failed:", error.message);
     return false;

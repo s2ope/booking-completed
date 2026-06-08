@@ -2,7 +2,9 @@ import Hotel from "../models/Hotel.js";
 import Room from "../models/Room.js";
 
 export const createHotel = async (req, res, next) => {
-  const newHotel = new Hotel(req.body);
+  const hotelData = { ...req.body };
+  delete hotelData.owner;
+  const newHotel = new Hotel({ ...hotelData, owner: req.user.id });
 
   try {
     const savedHotel = await newHotel.save();
@@ -13,9 +15,11 @@ export const createHotel = async (req, res, next) => {
 };
 export const updateHotel = async (req, res, next) => {
   try {
+    const hotelData = { ...req.body };
+    delete hotelData.owner;
     const updatedHotel = await Hotel.findByIdAndUpdate(
       req.params.id,
-      { $set: req.body },
+      { $set: hotelData },
       { new: true }
     );
     res.status(200).json(updatedHotel);

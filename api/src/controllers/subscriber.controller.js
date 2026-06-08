@@ -1,5 +1,5 @@
 import Subscriber from "../models/Subscriber.js";
-import nodemailer from "nodemailer";
+import { sendMail } from "../utils/mailer.js";
 
 const subscribe = async (req, res, next) => {
   const { email } = req.body;
@@ -19,31 +19,15 @@ const subscribe = async (req, res, next) => {
     const subscriber = new Subscriber({ email });
     await subscriber.save();
 
-    // Send confirmation email using Nodemailer
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
-    await transporter.verify();
-
-    const mailOptions = {
-      from: `"Mamabooking" <${process.env.EMAIL_USERNAME}>`,
+    await sendMail({
       to: email,
       subject: "Subscription Confirmation",
       html: `
         <h2>Thanks for subscribing!</h2>
         <p>You have successfully subscribed to our newsletter.</p>
       `,
-    };
+    });
 
-    // Using a promise-based approach for better error handling
-    await transporter.sendMail(mailOptions);
     console.log(`Confirmation email sent to ${email}`);
 
     // Respond with success message
@@ -54,4 +38,4 @@ const subscribe = async (req, res, next) => {
   }
 };
 
-export default { subscribe };
+export default subscribe;

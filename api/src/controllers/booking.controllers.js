@@ -3,6 +3,11 @@ import Hotel from "../models/Hotel.js";
 import Room from "../models/Room.js";
 import mongoose from "mongoose";
 import { createError } from "../utils/error.js";
+import {
+  getRoomNumberId,
+  hydrateBooking,
+} from "../utils/bookingHydration.js";
+import { sendBookingConfirmationEmailOnce } from "../utils/bookingConfirmation.js";
 
 const normalizeDate = (value) => {
   const date = new Date(value);
@@ -33,8 +38,6 @@ const getStayDates = (startDate, endDate) => {
   return dates;
 };
 
-const getRoomNumberId = (room) => room?.roomNumberId || room?._id || room;
-
 const getOwnerId = (booking) => {
   const user = booking.user;
   return String(user?._id || user);
@@ -47,6 +50,21 @@ const assertBookingAccess = (booking, user) => {
 
   if (!user?.isAdmin && getOwnerId(booking) !== user?.id) {
     throw createError(403, "You are not authorized to view this booking.");
+  }
+};
+
+const assertHotelOwnerAccess = (booking, user) => {
+  if (!booking) {
+    throw createError(404, "Booking not found");
+  }
+
+  const ownerId = booking.hotel?.owner;
+  if (!ownerId && user?.isAdmin) {
+    return;
+  }
+
+  if (!ownerId || String(ownerId) !== String(user?.id)) {
+    throw createError(403, "You are not authorized to manage this booking.");
   }
 };
 
@@ -85,76 +103,26 @@ const assertRoomsAvailable = (selectedRooms, stayDates) => {
   });
 };
 
-const getRoomNumberDetails = async (roomNumberIds) => {
-  if (!roomNumberIds.length) return [];
+const releaseRoomHolds = async (booking) => {
+  const stayDates = getStayDates(booking.startDate, booking.endDate);
+  const roomNumberIds = (booking.rooms || []).map(getRoomNumberId);
 
-  const validRoomNumberIds = roomNumberIds.filter((id) =>
-    mongoose.Types.ObjectId.isValid(id)
-  );
-  const ids = validRoomNumberIds.map((id) => new mongoose.Types.ObjectId(id));
-  const rooms = await Room.find({
-    $or: [{ "roomNumbers._id": { $in: ids } }, { _id: { $in: ids } }],
-  })
-    .select("title desc price maxPeople roomNumbers")
-    .lean();
-
-  return roomNumberIds.map((roomNumberId) => {
-    const parentRoom = rooms.find((room) =>
-      room.roomNumbers?.some(
-        (number) => String(number._id) === String(roomNumberId)
+  await Promise.all(
+    roomNumberIds.map((roomNumberId) =>
+      Room.updateOne(
+        { "roomNumbers._id": roomNumberId },
+        {
+          $pull: {
+            "roomNumbers.$.unavailableDates": { $in: stayDates },
+          },
+        }
       )
-    );
-
-    if (parentRoom) {
-      const roomNumber = parentRoom.roomNumbers.find(
-        (number) => String(number._id) === String(roomNumberId)
-      );
-
-      return {
-        _id: String(roomNumber._id),
-        roomId: String(parentRoom._id),
-        title: parentRoom.title,
-        desc: parentRoom.desc,
-        price: parentRoom.price,
-        maxPeople: parentRoom.maxPeople,
-        number: roomNumber.number,
-      };
-    }
-
-    const legacyRoom = rooms.find(
-      (room) => String(room._id) === String(roomNumberId)
-    );
-
-    if (legacyRoom) {
-      return {
-        _id: String(legacyRoom._id),
-        roomId: String(legacyRoom._id),
-        title: legacyRoom.title,
-        desc: legacyRoom.desc,
-        price: legacyRoom.price,
-        maxPeople: legacyRoom.maxPeople,
-        number: legacyRoom.roomNumbers?.map((number) => number.number).join(", "),
-      };
-    }
-
-    return {
-      _id: String(roomNumberId),
-      title: "Room details unavailable",
-      number: "N/A",
-    };
-  });
+    )
+  );
 };
 
-const hydrateBooking = async (bookingDoc) => {
-  const booking =
-    typeof bookingDoc.toObject === "function" ? bookingDoc.toObject() : bookingDoc;
-  const roomNumberIds = (booking.rooms || []).map(getRoomNumberId).map(String);
-
-  return {
-    ...booking,
-    rooms: await getRoomNumberDetails(roomNumberIds),
-  };
-};
+const getPopulatedBooking = (id) =>
+  Booking.findById(id).populate("hotel").populate("user", "username email");
 
 export const createBooking = async (req, res, next) => {
   try {
@@ -199,7 +167,7 @@ export const createBooking = async (req, res, next) => {
       startDate: normalizeDate(startDate),
       endDate: normalizeDate(endDate),
       totalPrice,
-      status: "confirmed",
+      status: "pending",
       specialRequests,
     });
 
@@ -232,9 +200,155 @@ export const getUserBookings = async (req, res, next) => {
   try {
     const bookings = await Booking.find({ user: req.user.id })
       .populate("hotel")
+      .populate("user", "username email")
       .sort({ createdAt: -1 });
 
     res.status(200).json(await Promise.all(bookings.map(hydrateBooking)));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getBookingRequests = async (req, res, next) => {
+  try {
+    const requestedStatus = req.query.status || "pending";
+    const normalizedStatus =
+      requestedStatus === "cancelled" ? "canceled" : requestedStatus;
+    const allowedStatuses = ["pending", "confirmed", "completed", "canceled"];
+
+    if (normalizedStatus !== "all" && !allowedStatuses.includes(normalizedStatus)) {
+      return next(createError(400, "Invalid booking status filter."));
+    }
+
+    const manageableHotelIds = await Hotel.find({
+      $or: [
+        { owner: req.user.id },
+        { owner: { $exists: false } },
+        { owner: null },
+      ],
+    }).distinct("_id");
+
+    if (!manageableHotelIds.length) {
+      return res.status(200).json([]);
+    }
+
+    const filter = {
+      hotel: { $in: manageableHotelIds },
+    };
+
+    if (normalizedStatus !== "all") {
+      filter.status = normalizedStatus;
+    }
+
+    const bookings = await Booking.find(filter)
+      .populate("hotel")
+      .populate("user", "username email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(await Promise.all(bookings.map(hydrateBooking)));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const acceptBookingRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return next(createError(400, "Invalid booking ID format"));
+    }
+
+    const booking = await getPopulatedBooking(id);
+    assertHotelOwnerAccess(booking, req.user);
+
+    if (booking.status !== "pending") {
+      return next(createError(400, "Only pending booking requests can be accepted."));
+    }
+
+    booking.status = "confirmed";
+    await booking.save();
+
+    const updatedBooking = await getPopulatedBooking(id);
+    const hydratedBooking = await hydrateBooking(updatedBooking);
+
+    res.status(200).json({
+      ...hydratedBooking,
+      accepted: true,
+      emailSent: false,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const sendAcceptedBookingEmail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return next(createError(400, "Invalid booking ID format"));
+    }
+
+    const booking = await getPopulatedBooking(id);
+    assertHotelOwnerAccess(booking, req.user);
+
+    if (booking.status !== "confirmed") {
+      return next(
+        createError(
+          400,
+          "Booking must be accepted before the confirmation email can be sent."
+        )
+      );
+    }
+
+    const hydratedBooking = await hydrateBooking(booking);
+
+    try {
+      const acceptedEmail = await sendBookingConfirmationEmailOnce(
+        booking,
+        hydratedBooking
+      );
+
+      return res.status(200).json({
+        ...hydratedBooking,
+        confirmationEmailSentAt: booking.confirmationEmailSentAt,
+        accepted: true,
+        emailSent: acceptedEmail.sent || acceptedEmail.alreadySent,
+        emailAlreadySent: acceptedEmail.alreadySent,
+        emailSentTo: acceptedEmail?.to,
+      });
+    } catch (emailError) {
+      return next(
+        createError(
+          502,
+          `Booking is accepted, but confirmation email could not be sent: ${emailError.message}`
+        )
+      );
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const declineBookingRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return next(createError(400, "Invalid booking ID format"));
+    }
+
+    const booking = await getPopulatedBooking(id);
+    assertHotelOwnerAccess(booking, req.user);
+
+    if (booking.status !== "pending") {
+      return next(createError(400, "Only pending booking requests can be declined."));
+    }
+
+    await releaseRoomHolds(booking);
+    booking.status = "canceled";
+    await booking.save();
+
+    const updatedBooking = await getPopulatedBooking(id);
+    res.status(200).json(await hydrateBooking(updatedBooking));
   } catch (err) {
     next(err);
   }
@@ -261,6 +375,10 @@ export const getBooking = async (req, res, next) => {
 
 export const updateBookingStatus = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return next(createError(400, "Invalid booking ID format"));
+    }
+
     const status = req.body.status === "cancelled" ? "canceled" : req.body.status;
     const allowedStatuses = ["pending", "confirmed", "completed", "canceled"];
 
@@ -268,19 +386,34 @@ export const updateBookingStatus = async (req, res, next) => {
       return next(createError(400, "Invalid booking status."));
     }
 
-    const updatedBooking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    )
-      .populate("hotel")
-      .populate("user", "username email");
+    const booking = await getPopulatedBooking(req.params.id);
+    assertHotelOwnerAccess(booking, req.user);
 
-    if (!updatedBooking) {
-      return next(createError(404, "Booking not found"));
+    if (booking.status === "completed" && status === "canceled") {
+      return next(createError(400, "Completed bookings cannot be canceled."));
     }
 
-    res.status(200).json(await hydrateBooking(updatedBooking));
+    const wasPending = booking.status === "pending";
+
+    if (status === "canceled" && booking.status !== "canceled") {
+      await releaseRoomHolds(booking);
+    }
+
+    booking.status = status;
+    await booking.save();
+
+    const updatedBooking = await getPopulatedBooking(req.params.id);
+    const hydratedBooking = await hydrateBooking(updatedBooking);
+
+    if (status === "confirmed" && wasPending) {
+      return res.status(200).json({
+        ...hydratedBooking,
+        accepted: true,
+        emailSent: false,
+      });
+    }
+
+    res.status(200).json(hydratedBooking);
   } catch (err) {
     next(err);
   }
@@ -301,22 +434,7 @@ export const cancelBooking = async (req, res, next) => {
     }
 
     if (booking.status !== "canceled") {
-      const stayDates = getStayDates(booking.startDate, booking.endDate);
-      const roomNumberIds = (booking.rooms || []).map(getRoomNumberId);
-
-      await Promise.all(
-        roomNumberIds.map((roomNumberId) =>
-          Room.updateOne(
-            { "roomNumbers._id": roomNumberId },
-            {
-              $pull: {
-                "roomNumbers.$.unavailableDates": { $in: stayDates },
-              },
-            }
-          )
-        )
-      );
-
+      await releaseRoomHolds(booking);
       booking.status = "canceled";
       await booking.save();
     }
