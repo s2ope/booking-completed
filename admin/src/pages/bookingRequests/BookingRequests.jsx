@@ -91,10 +91,17 @@ const BookingRequests = () => {
           emailResponse.data?.user?.email ||
           emailSentTo;
 
-        showToast(
-          `Confirmation email sent${sentTo ? ` to ${sentTo}` : ""}.`,
-          "success"
-        );
+        if (emailResponse.data?.emailSent === false) {
+          showToast(
+            "Booking accepted, but the confirmation email could not be sent.",
+            "warning"
+          );
+        } else {
+          showToast(
+            `Confirmation email sent${sentTo ? ` to ${sentTo}` : ""}.`,
+            "success"
+          );
+        }
       } catch (emailErr) {
         showToast(
           getApiMessage(
