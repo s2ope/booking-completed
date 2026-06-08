@@ -244,12 +244,19 @@ export const confirmBookingCheckoutSession = async (req, res, next) => {
         emailSentTo: emailResult.to,
       });
     } catch (emailError) {
-      return next(
-        createError(
-          502,
-          `Payment was recorded, but confirmation email could not be sent: ${emailError.message}`
-        )
+      console.error(
+        `Payment was recorded, but confirmation email could not be sent for booking ${booking._id}:`,
+        emailError.message
       );
+
+      return res.status(200).json({
+        ...hydratedBooking,
+        paymentConfirmed: true,
+        paymentAlreadyConfirmed: wasAlreadyPaid,
+        emailSent: false,
+        emailAlreadySent: false,
+        emailError: emailError.message,
+      });
     }
   } catch (error) {
     next(error);

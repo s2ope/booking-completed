@@ -317,12 +317,18 @@ export const sendAcceptedBookingEmail = async (req, res, next) => {
         emailSentTo: acceptedEmail?.to,
       });
     } catch (emailError) {
-      return next(
-        createError(
-          502,
-          `Booking is accepted, but confirmation email could not be sent: ${emailError.message}`
-        )
+      console.error(
+        `Booking is accepted, but confirmation email could not be sent for booking ${booking._id}:`,
+        emailError.message
       );
+
+      return res.status(200).json({
+        ...hydratedBooking,
+        accepted: true,
+        emailSent: false,
+        emailAlreadySent: false,
+        emailError: emailError.message,
+      });
     }
   } catch (err) {
     next(err);
