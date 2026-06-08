@@ -76,12 +76,19 @@ const BookingDetails = () => {
 
         setBooking(response.data);
         setError(null);
-        showToast(
-          response.data?.emailAlreadySent
-            ? "Payment successful. Confirmation email was already sent."
-            : "Payment successful. Booking confirmed and email sent.",
-          "success"
-        );
+        if (response.data?.emailSent === false) {
+          showToast(
+            "Payment successful and booking confirmed, but the email could not be sent.",
+            "warning"
+          );
+        } else {
+          showToast(
+            response.data?.emailAlreadySent
+              ? "Payment successful. Confirmation email was already sent."
+              : "Payment successful. Booking confirmed and email sent.",
+            "success"
+          );
+        }
         navigate(`/my-bookings/${id}`, { replace: true });
       } catch (err) {
         const message =
