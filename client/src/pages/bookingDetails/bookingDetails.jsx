@@ -86,6 +86,9 @@ const BookingDetails = () => {
       } catch (err) {
         const message =
           err.response?.data?.message ||
+          (err.code === "ECONNABORTED"
+            ? "Payment confirmation is taking too long. Please refresh this booking in a moment."
+            : "") ||
           "Payment could not be confirmed. Please contact support.";
 
         if (err.response?.status === 502) {
