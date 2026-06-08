@@ -6,10 +6,38 @@ import { hydrateBooking } from "../utils/bookingHydration.js";
 import { sendBookingConfirmationEmailOnce } from "../utils/bookingConfirmation.js";
 
 const CHECKOUT_CURRENCY = "usd";
+const LOCAL_CLIENT_URL = "http://localhost:5173";
+const DEPLOYED_CLIENT_URL = "https://mern-client-iota.vercel.app";
 
-const getClientUrl = () =>
-  String(process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:5173")
-    .replace(/\/+$/, "");
+const getDefaultClientUrl = () =>
+  process.env.NODE_ENV === "production"
+    ? process.env.DEPLOYED_CLIENT_URL || DEPLOYED_CLIENT_URL
+    : LOCAL_CLIENT_URL;
+
+const normalizeUrl = (url) => String(url || "").replace(/\/+$/, "");
+
+const getClientUrl = (req) => {
+  const allowedClientUrls = new Set(
+    [
+      LOCAL_CLIENT_URL,
+      DEPLOYED_CLIENT_URL,
+      process.env.CLIENT_URL,
+      process.env.FRONTEND_URL,
+      process.env.DEPLOYED_CLIENT_URL,
+    ]
+      .filter(Boolean)
+      .map(normalizeUrl)
+  );
+  const requestOrigin = normalizeUrl(req.get?.("origin"));
+
+  if (requestOrigin && allowedClientUrls.has(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  return normalizeUrl(
+    process.env.CLIENT_URL || process.env.FRONTEND_URL || getDefaultClientUrl()
+  );
+};
 
 const getBookingOwnerId = (booking) => String(booking.user?._id || booking.user);
 
@@ -54,6 +82,7 @@ export const createCheckoutSession = async (req, res) => {
       });
     }
 
+    const clientUrl = getClientUrl(req);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems.map((item) => ({
@@ -67,8 +96,8 @@ export const createCheckoutSession = async (req, res) => {
         quantity: Number(item.quantity) || 1,
       })),
       mode: "payment",
-      success_url: "http://localhost:5173/success",
-      cancel_url: "http://localhost:5173/cancel",
+      success_url: `${clientUrl}/success`,
+      cancel_url: `${clientUrl}/cancel`,
     });
 
     return res.status(200).json({ url: session.url });
@@ -107,7 +136,7 @@ export const createBookingCheckoutSession = async (req, res, next) => {
 
     const bookingId = String(booking._id);
     const userId = String(req.user.id);
-    const clientUrl = getClientUrl();
+    const clientUrl = getClientUrl(req);
     const hotelName = booking.hotel?.name || "Hotel booking";
     const metadata = { bookingId, userId };
 
