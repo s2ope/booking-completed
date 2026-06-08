@@ -16,20 +16,25 @@ const cityImages = {
 
 const Destination = () => {
   const { city = "" } = useParams();
+
+  // decoded original value (for UI)
   const displayCity = decodeURIComponent(city);
+
+  // normalized lowercase key (for API + mapping)
+  const cityKey = displayCity.toLowerCase();
+
   const { data, loading, error } = useFetch(
-    `/hotels?city=${encodeURIComponent(displayCity)}&min=0&max=999`
+    `/hotels?city=${encodeURIComponent(cityKey)}&min=0&max=999`,
   );
-  const image =
-    cityImages[displayCity.toLowerCase()] ||
-    data?.[0]?.photos?.[0] ||
-    cityImages.usa;
+
+  const image = cityImages[cityKey] || data?.[0]?.photos?.[0] || cityImages.usa;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <Header type="list" />
 
+      {/* HERO SECTION */}
       <section className="relative h-64 w-full overflow-hidden bg-gray-900 text-white">
         <img
           src={image}
@@ -46,6 +51,7 @@ const Destination = () => {
         </div>
       </section>
 
+      {/* CONTENT */}
       <main className="mx-auto max-w-5xl px-4 py-8">
         <div className="mb-5 flex items-center justify-between gap-4">
           <h2 className="text-2xl font-semibold">Stays in {displayCity}</h2>
@@ -55,7 +61,9 @@ const Destination = () => {
         </div>
 
         {loading ? (
-          <div className="py-10 text-center text-gray-500">Loading hotels...</div>
+          <div className="py-10 text-center text-gray-500">
+            Loading hotels...
+          </div>
         ) : error ? (
           <div className="py-10 text-center text-red-500">
             Could not load this destination.

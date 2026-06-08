@@ -15,7 +15,9 @@ const List = () => {
   defaultEndDate.setDate(defaultEndDate.getDate() + 1);
   const { destination, dates, options, propertyType } = location.state || {
     destination: "",
-    dates: [{ startDate: new Date(), endDate: defaultEndDate, key: "selection" }],
+    dates: [
+      { startDate: new Date(), endDate: defaultEndDate, key: "selection" },
+    ],
     options: { adult: 1, children: 0, room: 1 },
     propertyType: "",
   };
@@ -25,7 +27,7 @@ const List = () => {
   const [openDate, setOpenDate] = useState(false);
   const [searchOptions, setSearchOptions] = useState(options);
   const [searchPropertyType, setSearchPropertyType] = useState(
-    propertyType || ""
+    propertyType || "",
   );
   const [min, setMin] = useState(undefined);
   const [max, setMax] = useState(undefined);
@@ -37,7 +39,7 @@ const List = () => {
       resorts: "resort",
       villas: "villa",
       cabins: "cabin",
-    }[type] || type);
+    })[type] || type;
 
   const hotelQuery = useMemo(() => {
     const params = new URLSearchParams();
@@ -66,7 +68,14 @@ const List = () => {
         propertyType: searchPropertyType,
       },
     }),
-    [searchDestination, searchDates, searchOptions, min, max, searchPropertyType]
+    [
+      searchDestination,
+      searchDates,
+      searchOptions,
+      min,
+      max,
+      searchPropertyType,
+    ],
   );
 
   useEffect(() => {
@@ -109,7 +118,7 @@ const List = () => {
       } else {
         showToast(
           `Found ${results.length} hotels matching your criteria`,
-          "success"
+          "success",
         );
       }
     } catch (err) {
@@ -172,7 +181,7 @@ const List = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <Header type="list" />
-
+      //Todo: Fix this
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row gap-6">
           <aside className="w-full md:w-80 flex-shrink-0">
@@ -205,7 +214,7 @@ const List = () => {
                   >
                     {`${format(
                       searchDates[0].startDate,
-                      "MM/dd/yyyy"
+                      "MM/dd/yyyy",
                     )} to ${format(searchDates[0].endDate, "MM/dd/yyyy")}`}
                   </button>
                   {openDate && (
@@ -225,9 +234,7 @@ const List = () => {
                   <div className="bg-white rounded p-3 space-y-2">
                     {searchPropertyType && (
                       <div className="flex justify-between items-center rounded bg-blue-50 px-2 py-1 text-xs text-blue-700">
-                        <span className="capitalize">
-                          {searchPropertyType}
-                        </span>
+                        <span className="capitalize">{searchPropertyType}</span>
                         <button
                           type="button"
                           className="font-semibold hover:underline"

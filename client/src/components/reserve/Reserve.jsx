@@ -122,7 +122,7 @@ const Reserve = ({ setOpen, hotelId, searchState }) => {
       });
 
       setOpen(false);
-      showToast("Booking completed successfully!", "success");
+      showToast("Booking request submitted. The hotel will review it soon.", "success");
       navigate(`/my-bookings/${response.data._id}`);
     } catch (err) {
       showToast(
@@ -221,7 +221,7 @@ const Reserve = ({ setOpen, hotelId, searchState }) => {
               disabled={submitting || selectedRooms.length === 0}
               className="rButton bg-[#0071c2] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold cursor-pointer rounded-md px-6 py-2"
             >
-              {submitting ? "Reserving..." : "Reserve Now"}
+              {submitting ? "Sending request..." : "Request Booking"}
             </button>
           </div>
         </div>

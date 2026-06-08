@@ -110,62 +110,67 @@ const MyBookings = () => {
           <div className="text-center text-gray-500">No bookings found</div>
         ) : (
           <div className="grid gap-6">
-            {bookings.map((booking) => (
-              <div
-                key={booking._id}
-                className="bg-white shadow-md rounded-lg p-6 flex flex-col md:flex-row md:justify-between md:items-center gap-5"
-              >
-                <div>
-                  <h2 className="text-xl font-semibold">
-                    {booking.hotel?.name || "Hotel Details Unavailable"}
-                  </h2>
-                  <div className="text-gray-600 mt-2 space-y-1">
-                    <p>Check-in: {format(new Date(booking.startDate), "PP")}</p>
-                    <p>Check-out: {format(new Date(booking.endDate), "PP")}</p>
-                    <p>
-                      Rooms:{" "}
-                      {booking.rooms
-                        ?.map((room) => room.number || room.title)
-                        .join(", ") || "N/A"}
-                    </p>
-                    <p>Total Price: ${booking.totalPrice}</p>
-                    <p>
-                      Status:{" "}
-                      <span
-                        className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold capitalize ${statusClass(
-                          booking.status
-                        )}`}
+            {bookings.map((booking) => {
+              const bookingEmail = booking.user?.email || user?.email || "N/A";
+
+              return (
+                <div
+                  key={booking._id}
+                  className="bg-white shadow-md rounded-lg p-6 flex flex-col md:flex-row md:justify-between md:items-center gap-5"
+                >
+                  <div>
+                    <h2 className="text-xl font-semibold">
+                      {booking.hotel?.name || "Hotel Details Unavailable"}
+                    </h2>
+                    <div className="text-gray-600 mt-2 space-y-1">
+                      <p>Email: {bookingEmail}</p>
+                      <p>Check-in: {format(new Date(booking.startDate), "PP")}</p>
+                      <p>Check-out: {format(new Date(booking.endDate), "PP")}</p>
+                      <p>
+                        Rooms:{" "}
+                        {booking.rooms
+                          ?.map((room) => room.number || room.title)
+                          .join(", ") || "N/A"}
+                      </p>
+                      <p>Total Price: ${booking.totalPrice}</p>
+                      <p>
+                        Status:{" "}
+                        <span
+                          className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold capitalize ${statusClass(
+                            booking.status
+                          )}`}
+                        >
+                          {booking.status}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                      onClick={() => navigate(`/my-bookings/${booking._id}`)}
+                    >
+                      View Details
+                    </button>
+                    {["pending", "confirmed"].includes(booking.status) && (
+                      <button
+                        className={`${
+                          cancelingBookingId === booking._id
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-red-500 hover:bg-red-600"
+                        } text-white px-4 py-2 rounded`}
+                        onClick={() => handleCancelBooking(booking._id)}
+                        disabled={cancelingBookingId === booking._id}
                       >
-                        {booking.status}
-                      </span>
-                    </p>
+                        {cancelingBookingId === booking._id
+                          ? "Canceling..."
+                          : "Cancel Booking"}
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                    onClick={() => navigate(`/my-bookings/${booking._id}`)}
-                  >
-                    View Details
-                  </button>
-                  {["pending", "confirmed"].includes(booking.status) && (
-                    <button
-                      className={`${
-                        cancelingBookingId === booking._id
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-red-500 hover:bg-red-600"
-                      } text-white px-4 py-2 rounded`}
-                      onClick={() => handleCancelBooking(booking._id)}
-                      disabled={cancelingBookingId === booking._id}
-                    >
-                      {cancelingBookingId === booking._id
-                        ? "Canceling..."
-                        : "Cancel Booking"}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

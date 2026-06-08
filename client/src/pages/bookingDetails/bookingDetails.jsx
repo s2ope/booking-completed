@@ -1,26 +1,38 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api/axios.js";
 import Navbar from "../../components/navbar/Navbar";
 import Header from "../../components/header/Header";
 import { AuthContext } from "../../context/AuthContext";
 import { showToast } from "../../helpers/ToastHelper";
+import HomePayment from "../homePayment/homePayment";
 
 const BookingDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useContext(AuthContext);
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [canceling, setCanceling] = useState(false);
+  const [paymentConfirming, setPaymentConfirming] = useState(false);
+  const handledPaymentSessionRef = useRef("");
+  const searchParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
+  const isPaymentSuccess = location.pathname.endsWith("/payment-success");
+  const stripeSessionId = searchParams.get("session_id");
 
   useEffect(() => {
     if (!user) {
       navigate("/login", { state: { from: `/my-bookings/${id}` } });
       return;
     }
+
+    if (isPaymentSuccess && stripeSessionId) return;
 
     const fetchBookingDetails = async () => {
       try {
@@ -34,7 +46,71 @@ const BookingDetails = () => {
     };
 
     fetchBookingDetails();
-  }, [id, navigate, user]);
+  }, [id, isPaymentSuccess, navigate, stripeSessionId, user]);
+
+  useEffect(() => {
+    if (!user || searchParams.get("payment") !== "cancelled") return;
+
+    showToast("Payment was cancelled. Your booking is still pending.", "warning");
+    navigate(`/my-bookings/${id}`, { replace: true });
+  }, [id, navigate, searchParams, user]);
+
+  useEffect(() => {
+    if (!user || !isPaymentSuccess) return;
+
+    if (!stripeSessionId) {
+      setError("Stripe checkout session was not provided.");
+      setLoading(false);
+      return;
+    }
+
+    if (handledPaymentSessionRef.current === stripeSessionId) return;
+    handledPaymentSessionRef.current = stripeSessionId;
+
+    const confirmPayment = async () => {
+      setPaymentConfirming(true);
+      try {
+        const response = await api.post(`/checkout/bookings/${id}/confirm`, {
+          sessionId: stripeSessionId,
+        });
+
+        setBooking(response.data);
+        setError(null);
+        showToast(
+          response.data?.emailAlreadySent
+            ? "Payment successful. Confirmation email was already sent."
+            : "Payment successful. Booking confirmed and email sent.",
+          "success"
+        );
+        navigate(`/my-bookings/${id}`, { replace: true });
+      } catch (err) {
+        const message =
+          err.response?.data?.message ||
+          "Payment could not be confirmed. Please contact support.";
+
+        if (err.response?.status === 502) {
+          try {
+            const bookingResponse = await api.get(`/bookings/${id}`);
+            setBooking(bookingResponse.data);
+            setError(null);
+            showToast(message, "warning");
+            navigate(`/my-bookings/${id}`, { replace: true });
+          } catch {
+            setError(message);
+            showToast(message, "error");
+          }
+        } else {
+          setError(message);
+          showToast(message, "error");
+        }
+      } finally {
+        setPaymentConfirming(false);
+        setLoading(false);
+      }
+    };
+
+    confirmPayment();
+  }, [id, isPaymentSuccess, navigate, stripeSessionId, user]);
 
   const handleCancel = async () => {
     setCanceling(true);
@@ -73,7 +149,9 @@ const BookingDetails = () => {
         <Navbar />
         <Header type="list" />
         <div className="flex justify-center items-center h-64">
-          <div className="text-gray-600">Loading booking...</div>
+          <div className="text-gray-600">
+            {paymentConfirming ? "Confirming payment..." : "Loading booking..."}
+          </div>
         </div>
       </div>
     );
@@ -165,6 +243,30 @@ const BookingDetails = () => {
               </label>
               <span className="text-gray-800">${booking.totalPrice}</span>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Email
+              </label>
+              <span className="text-gray-800">
+                {booking.user?.email || user?.email || "N/A"}
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Payment
+              </label>
+              <span
+                className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold capitalize ${
+                  booking.paymentStatus === "paid"
+                    ? "bg-green-50 text-green-700"
+                    : "bg-yellow-50 text-yellow-700"
+                }`}
+              >
+                {booking.paymentStatus || "unpaid"}
+              </span>
+            </div>
           </div>
 
           <div className="border-t border-gray-200 pt-6">
@@ -203,6 +305,12 @@ const BookingDetails = () => {
             <div className="border-t border-gray-200 pt-6 mt-6">
               <h3 className="text-lg font-semibold mb-2">Special Requests</h3>
               <p className="text-gray-700">{booking.specialRequests}</p>
+            </div>
+          )}
+
+          {booking.status === "pending" && (
+            <div className="border-t border-gray-200 pt-6 mt-6">
+              <HomePayment booking={booking} embedded />
             </div>
           )}
 

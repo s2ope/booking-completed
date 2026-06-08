@@ -16,6 +16,7 @@ import "react-date-range/dist/theme/default.css";
 const Header = ({ type }) => {
   const defaultEndDate = new Date();
   defaultEndDate.setDate(defaultEndDate.getDate() + 1);
+
   const [destination, setDestination] = useState("");
   const [dates, setDates] = useState([
     {
@@ -24,11 +25,13 @@ const Header = ({ type }) => {
       key: "selection",
     },
   ]);
+
   const [options, setOptions] = useState({
     adult: 1,
     children: 0,
     room: 1,
   });
+
   const [activeSection, setActiveSection] = useState("destination");
 
   const navigate = useNavigate();
@@ -43,8 +46,25 @@ const Header = ({ type }) => {
   };
 
   const handleSearch = () => {
-    dispatch({ type: "NEW_SEARCH", payload: { destination, dates, options } });
-    navigate("/hotels", { state: { destination, dates, options } });
+    // ✅ normalize for case-insensitive search
+    const normalizedDestination = destination.trim().toLowerCase();
+
+    dispatch({
+      type: "NEW_SEARCH",
+      payload: {
+        destination: normalizedDestination,
+        dates,
+        options,
+      },
+    });
+
+    navigate("/hotels", {
+      state: {
+        destination: normalizedDestination,
+        dates,
+        options,
+      },
+    });
   };
 
   const handleSignInRegister = () => {
@@ -62,16 +82,18 @@ const Header = ({ type }) => {
           type === "list" ? "my-5" : "mt-5 mb-[100px]"
         }`}
       >
-        {/* Content */}
+        {/* Header Content */}
         {type !== "list" && (
           <>
             <h1 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-4 text-center sm:text-left">
               A lifetime of discounts? It's Genius.
             </h1>
+
             <p className="text-sm sm:text-lg mb-4 sm:mb-6 text-center sm:text-left">
               Get rewarded for your travels - unlock instant savings of 10% or
               more with a free Mamabooking account
             </p>
+
             {!user && (
               <div className="flex justify-center sm:justify-start mb-4 sm:mb-6">
                 <button
@@ -83,10 +105,10 @@ const Header = ({ type }) => {
               </div>
             )}
 
-            {/* Search Bar */}
+            {/* SEARCH BAR */}
             <div className="absolute left-0 right-0 mx-2 sm:mx-4 -bottom-7 bg-white border-[3px] border-[#febb02] rounded-md shadow-lg">
               <div className="flex flex-col sm:flex-row flex-wrap items-center h-auto sm:h-14 p-2 sm:p-0 gap-2 sm:gap-0">
-                {/* Destination Input */}
+                {/* DESTINATION */}
                 <div
                   className={`flex items-center gap-2 px-3 sm:px-4 flex-1 min-w-[200px] sm:min-w-[260px] h-12 sm:h-full rounded ${
                     activeSection === "destination" ? "bg-gray-100" : ""
@@ -103,7 +125,7 @@ const Header = ({ type }) => {
                   />
                 </div>
 
-                {/* Date Selection */}
+                {/* DATE */}
                 <div
                   className={`flex items-center gap-2 px-3 sm:px-4 flex-1 min-w-[200px] sm:min-w-[260px] h-12 sm:h-full cursor-pointer rounded ${
                     activeSection === "date" ? "bg-gray-100" : ""
@@ -117,9 +139,10 @@ const Header = ({ type }) => {
                   <span className="text-gray-600 text-sm sm:text-base">
                     {`${format(dates[0].startDate, "MM/dd/yyyy")} to ${format(
                       dates[0].endDate,
-                      "MM/dd/yyyy"
+                      "MM/dd/yyyy",
                     )}`}
                   </span>
+
                   {activeSection === "date" && (
                     <div className="absolute top-20 sm:top-16 left-2 sm:left-auto sm:right-0 z-20">
                       <DateRange
@@ -134,7 +157,7 @@ const Header = ({ type }) => {
                   )}
                 </div>
 
-                {/* Options Selection */}
+                {/* OPTIONS */}
                 <div
                   className={`flex items-center gap-2 px-3 sm:px-4 flex-1 min-w-[200px] sm:min-w-[260px] h-12 sm:h-full cursor-pointer rounded ${
                     activeSection === "options" ? "bg-gray-100" : ""
@@ -145,6 +168,7 @@ const Header = ({ type }) => {
                   <span className="text-gray-600 text-sm sm:text-base">
                     {`${options.adult} adult · ${options.children} children · ${options.room} room`}
                   </span>
+
                   {activeSection === "options" && (
                     <div className="absolute top-20 sm:top-16 right-2 sm:right-0 bg-white rounded-lg shadow-lg p-4 z-20 w-[90vw] sm:w-auto">
                       {[
@@ -159,12 +183,13 @@ const Header = ({ type }) => {
                           <span className="text-gray-700 capitalize mr-4 sm:mr-8 text-sm sm:text-base">
                             {item.type}
                           </span>
+
                           <div className="flex items-center gap-2 sm:gap-4">
                             <button
                               disabled={options[item.type] <= item.min}
                               className="w-8 h-8 border border-[#0071c2] text-[#0071c2] rounded
-                            disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#0071c2] 
-                            hover:text-white transition-colors text-sm sm:text-base"
+                              disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#0071c2] 
+                              hover:text-white transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleOption(item.type, "d");
@@ -172,12 +197,14 @@ const Header = ({ type }) => {
                             >
                               -
                             </button>
-                            <span className="text-gray-800 w-4 text-center text-sm sm:text-base">
+
+                            <span className="text-gray-800 w-4 text-center">
                               {options[item.type]}
                             </span>
+
                             <button
                               className="w-8 h-8 border border-[#0071c2] text-[#0071c2] rounded
-                            hover:bg-[#0071c2] hover:text-white transition-colors text-sm sm:text-base"
+                              hover:bg-[#0071c2] hover:text-white transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleOption(item.type, "i");
@@ -192,10 +219,10 @@ const Header = ({ type }) => {
                   )}
                 </div>
 
-                {/* Search Button */}
+                {/* SEARCH BUTTON */}
                 <div className="px-3 sm:px-4 w-full sm:w-auto">
                   <button
-                    className="bg-[#0071c2] w-full sm:w-auto px-4 sm:px-6 py-2 text-white font-medium rounded hover:bg-[#00487a] transition-colors text-sm sm:text-base"
+                    className="bg-[#0071c2] w-full sm:w-auto px-4 sm:px-6 py-2 text-white font-medium rounded hover:bg-[#00487a] transition-colors"
                     onClick={handleSearch}
                   >
                     Search
