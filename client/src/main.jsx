@@ -5,7 +5,6 @@ import { SearchContextProvider } from "./context/SearchContext";
 import { AuthContextProvider } from "./context/AuthContext";
 import { SavedHotelsContextProvider } from "./context/SavedHotelsContext";
 import "../assets/global.css";
-import ClarityInteractionTracker from "./components/clarity/ClarityInteractionTracker";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -13,7 +12,6 @@ root.render(
     <AuthContextProvider>
       <SavedHotelsContextProvider>
         <SearchContextProvider>
-          <ClarityInteractionTracker />
           <App />
         </SearchContextProvider>
       </SavedHotelsContextProvider>

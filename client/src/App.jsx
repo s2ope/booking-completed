@@ -20,11 +20,13 @@ import Destination from "./pages/destination/Destination";
 import PropertyType from "./pages/propertyType/PropertyType";
 import Footer from "./components/footer/Footer";
 import HomePayment from "./pages/homePayment/homePayment";
+import ClarityInteractionTracker from "./components/clarity/ClarityInteractionTracker";
 
 function App() {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <BrowserRouter>
+        <ClarityInteractionTracker />
         <ToastContainer position="top-right" autoClose={3000} theme="light" />
 
         <Routes>
