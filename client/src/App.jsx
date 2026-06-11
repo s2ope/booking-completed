@@ -18,7 +18,6 @@ import MyAccount from "./pages/account/MyAccount";
 import Saved from "./pages/saved/Saved";
 import Destination from "./pages/destination/Destination";
 import PropertyType from "./pages/propertyType/PropertyType";
-import Test from "./pages/test/test";
 import Footer from "./components/footer/Footer";
 import HomePayment from "./pages/homePayment/homePayment";
 
