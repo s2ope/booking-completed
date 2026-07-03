@@ -6,6 +6,16 @@ const getEmailUser = () => String(process.env.EMAIL_USERNAME || "").trim();
 const getEmailPassword = () => String(process.env.EMAIL_PASSWORD || "").trim();
 const getEmailService = () =>
   String(process.env.EMAIL_SERVICE || DEFAULT_EMAIL_SERVICE).trim();
+const getEmailHost = () => String(process.env.EMAIL_HOST || "").trim();
+const getEmailPort = () => Number(process.env.EMAIL_PORT || 0);
+const getEmailSecure = () =>
+  String(process.env.EMAIL_SECURE || "").trim().toLowerCase() === "true";
+const getSendGridApiKey = () =>
+  String(process.env.EMAIL_SENDGRID_API_KEY || "").trim();
+const getSendGridFrom = () =>
+  String(process.env.EMAIL_SENDGRID_FROM || "").trim() || getMailerFromAddress();
+
+const isSendGridConfigured = () => Boolean(getSendGridApiKey());
 
 const getMissingEmailConfig = () =>
   [
@@ -98,24 +108,111 @@ export const createMailerError = (error) => {
   return mailerError;
 };
 
+const parseFromAddress = (address) => {
+  const match = address.match(/^(?:"?([^"<]*)"?\s*)?<([^>]+)>$/);
+  if (!match) {
+    return { name: "", email: address };
+  }
+  return { name: match[1]?.trim() || "", email: match[2].trim() };
+};
+
 export const createMailerTransport = () => {
   if (!isMailerConfigured()) {
     throw createMissingConfigError();
   }
 
-  return nodemailer.createTransport({
-    service: getEmailService(),
-    auth: {
-      user: getEmailUser(),
-      pass: getEmailPassword(),
+  const host = getEmailHost();
+  const port = getEmailPort();
+  const secure = getEmailSecure() || port === 465;
+
+  const transportOptions = host
+    ? {
+        host,
+        port: port || 465,
+        secure,
+        auth: {
+          user: getEmailUser(),
+          pass: getEmailPassword(),
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
+      }
+    : {
+        service: getEmailService(),
+        auth: {
+          user: getEmailUser(),
+          pass: getEmailPassword(),
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
+      };
+
+  return nodemailer.createTransport(transportOptions);
+};
+
+const sendMailWithSendGrid = async (mailOptions) => {
+  const fromAddress = getSendGridFrom();
+  const { name, email } = parseFromAddress(fromAddress);
+
+  const body = {
+    personalizations: [
+      {
+        to: [
+          {
+            email: mailOptions.to,
+          },
+        ],
+      },
+    ],
+    from: {
+      email,
+      name: name || "Mamabooking",
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    subject: mailOptions.subject,
+    content: [
+      {
+        type: "text/plain",
+        value: mailOptions.text || "",
+      },
+    ],
+  };
+
+  if (mailOptions.html) {
+    body.content.push({ type: "text/html", value: mailOptions.html });
+  }
+
+  const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getSendGridApiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
   });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    const error = new Error(
+      `SendGrid API error: ${response.status} ${response.statusText} - ${errorBody}`,
+    );
+    error.code = "ESENDGRID";
+    throw error;
+  }
+
+  return true;
 };
 
 export const sendMail = async (mailOptions) => {
+  if (isSendGridConfigured()) {
+    try {
+      return await sendMailWithSendGrid(mailOptions);
+    } catch (error) {
+      throw createMailerError(error);
+    }
+  }
+
   const transporter = createMailerTransport();
 
   try {
