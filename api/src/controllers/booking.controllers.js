@@ -1,6 +1,7 @@
 import Booking from "../models/Booking.js";
 import Hotel from "../models/Hotel.js";
 import Room from "../models/Room.js";
+import User from "../models/User.js";
 import mongoose from "mongoose";
 import { createError } from "../utils/error.js";
 import {
@@ -160,8 +161,12 @@ export const createBooking = async (req, res, next) => {
       0
     );
 
+    const currentUser = await User.findById(req.user.id).select("username email").lean();
+
     const newBooking = new Booking({
       user: req.user.id,
+      userEmail: currentUser?.email,
+      userName: currentUser?.username,
       hotel,
       rooms: selectedRoomIds,
       startDate: normalizeDate(startDate),

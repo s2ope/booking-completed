@@ -8,7 +8,8 @@ export const sendBookingConfirmationEmailOnce = async (
     return {
       alreadySent: true,
       sent: false,
-      to: hydratedBooking?.user?.email || bookingDoc.user?.email,
+      to:
+        hydratedBooking?.user?.email || bookingDoc.user?.email || bookingDoc.userEmail,
     };
   }
 

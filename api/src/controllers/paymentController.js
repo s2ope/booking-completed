@@ -1,5 +1,6 @@
 import stripe from "../lib/stripe.js";
 import Booking from "../models/Booking.js";
+import User from "../models/User.js";
 import mongoose from "mongoose";
 import { createError } from "../utils/error.js";
 import { hydrateBooking } from "../utils/bookingHydration.js";
@@ -26,7 +27,7 @@ const getClientUrl = (req) => {
       process.env.DEPLOYED_CLIENT_URL,
     ]
       .filter(Boolean)
-      .map(normalizeUrl)
+      .map(normalizeUrl),
   );
   const requestOrigin = normalizeUrl(req.get?.("origin"));
 
@@ -35,11 +36,12 @@ const getClientUrl = (req) => {
   }
 
   return normalizeUrl(
-    process.env.CLIENT_URL || process.env.FRONTEND_URL || getDefaultClientUrl()
+    process.env.CLIENT_URL || process.env.FRONTEND_URL || getDefaultClientUrl(),
   );
 };
 
-const getBookingOwnerId = (booking) => String(booking.user?._id || booking.user);
+const getBookingOwnerId = (booking) =>
+  String(booking.user?._id || booking.user);
 
 const getPopulatedBooking = (id) =>
   Booking.findById(id).populate("hotel").populate("user", "username email");
@@ -67,14 +69,14 @@ export const createCheckoutSession = async (req, res) => {
     const lineItems = items.length
       ? items
       : productName && amount
-      ? [
-          {
-            name: productName,
-            price: Number(amount),
-            quantity: Number(quantity) || 1,
-          },
-        ]
-      : [];
+        ? [
+            {
+              name: productName,
+              price: Number(amount),
+              quantity: Number(quantity) || 1,
+            },
+          ]
+        : [];
 
     if (!lineItems.length) {
       return res.status(400).json({
@@ -184,11 +186,26 @@ export const confirmBookingCheckoutSession = async (req, res, next) => {
       return next(createError(400, "Stripe checkout session ID is required."));
     }
 
-    const booking = await getPopulatedBooking(id);
+    let booking = await getPopulatedBooking(id);
     assertBookingOwner(booking, req.user);
+
+    let fallbackUser = null;
 
     if (booking.status === "canceled") {
       return next(createError(400, "Canceled bookings cannot be confirmed."));
+    }
+
+    if (!booking.user?.email && !booking.userEmail) {
+      fallbackUser = await User.findById(req.user.id)
+        .select("email username")
+        .lean();
+      if (fallbackUser?.email) {
+        booking.user = {
+          _id: booking.user?._id || booking.user,
+          email: fallbackUser.email,
+          username: booking.user?.username || fallbackUser.username,
+        };
+      }
     }
 
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -197,8 +214,13 @@ export const confirmBookingCheckoutSession = async (req, res, next) => {
 
     const sessionBookingId = session.metadata?.bookingId;
     const sessionUserId = session.metadata?.userId;
-    if (sessionBookingId !== String(booking._id) || sessionUserId !== req.user.id) {
-      return next(createError(403, "Stripe session does not match this booking."));
+    if (
+      sessionBookingId !== String(booking._id) ||
+      sessionUserId !== req.user.id
+    ) {
+      return next(
+        createError(403, "Stripe session does not match this booking."),
+      );
     }
 
     if (session.payment_status !== "paid") {
@@ -207,15 +229,24 @@ export const confirmBookingCheckoutSession = async (req, res, next) => {
 
     const expectedAmount = Math.round(Number(booking.totalPrice || 0) * 100);
     if (Number(session.amount_total) !== expectedAmount) {
-      return next(createError(400, "Stripe payment amount does not match this booking."));
+      return next(
+        createError(400, "Stripe payment amount does not match this booking."),
+      );
     }
 
     if (String(session.currency || "").toLowerCase() !== CHECKOUT_CURRENCY) {
-      return next(createError(400, "Stripe payment currency does not match this booking."));
+      return next(
+        createError(
+          400,
+          "Stripe payment currency does not match this booking.",
+        ),
+      );
     }
 
     if (!["pending", "confirmed"].includes(booking.status)) {
-      return next(createError(400, "This booking cannot be confirmed by payment."));
+      return next(
+        createError(400, "This booking cannot be confirmed by payment."),
+      );
     }
 
     const wasAlreadyPaid = booking.paymentStatus === "paid";
@@ -228,10 +259,23 @@ export const confirmBookingCheckoutSession = async (req, res, next) => {
 
     const hydratedBooking = await hydrateBooking(booking);
 
+    if (!hydratedBooking.user?.email && !hydratedBooking.userEmail) {
+      if (!fallbackUser) {
+        fallbackUser = await User.findById(req.user.id)
+          .select("email username")
+          .lean();
+      }
+      hydratedBooking.user = {
+        ...hydratedBooking.user,
+        email: fallbackUser?.email,
+        username: hydratedBooking.user?.username || fallbackUser?.username,
+      };
+    }
+
     try {
       const emailResult = await sendBookingConfirmationEmailOnce(
         booking,
-        hydratedBooking
+        hydratedBooking,
       );
 
       return res.status(200).json({
@@ -242,11 +286,12 @@ export const confirmBookingCheckoutSession = async (req, res, next) => {
         emailSent: emailResult.sent || emailResult.alreadySent,
         emailAlreadySent: emailResult.alreadySent,
         emailSentTo: emailResult.to,
+        emailUsed: hydratedBooking.user?.email,
       });
     } catch (emailError) {
       console.error(
         `Payment was recorded, but confirmation email could not be sent for booking ${booking._id}:`,
-        emailError.message
+        emailError,
       );
 
       return res.status(200).json({

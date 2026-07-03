@@ -12,7 +12,11 @@ const formatDate = (value) =>
 const formatRooms = (rooms = []) => {
   if (!rooms.length) return "Room details unavailable";
   return rooms
-    .map((room) => [room.title, room.number ? `Room ${room.number}` : ""].filter(Boolean).join(" - "))
+    .map((room) =>
+      [room.title, room.number ? `Room ${room.number}` : ""]
+        .filter(Boolean)
+        .join(" - "),
+    )
     .join(", ");
 };
 
@@ -27,21 +31,33 @@ const escapeHtml = (value = "") =>
 const getBookingUserId = (booking) => booking?.user?._id || booking?.user;
 
 const resolveBookingUser = async (booking) => {
-  const userId = getBookingUserId(booking);
+  const bookingUser = booking?.user || {};
+  const bookingEmail = String(
+    bookingUser?.email || booking?.email || booking?.userEmail || ""
+  ).trim();
+  const bookingUsername = bookingUser?.username || booking?.username || "Guest";
 
+  if (bookingEmail) {
+    return {
+      username: bookingUsername,
+      email: bookingEmail,
+    };
+  }
+
+  const userId = getBookingUserId(booking);
   if (userId && mongoose.Types.ObjectId.isValid(String(userId))) {
     const user = await User.findById(userId).select("username email").lean();
-    if (user) {
+    if (user?.email) {
       return {
-        username: user.username,
-        email: String(user.email || "").trim(),
+        username: user.username || bookingUsername,
+        email: String(user.email).trim(),
       };
     }
   }
 
   return {
-    username: booking?.user?.username,
-    email: String(booking?.user?.email || "").trim(),
+    username: bookingUsername,
+    email: "",
   };
 };
 
@@ -58,22 +74,21 @@ export const sendBookingAcceptedEmail = async (booking) => {
   const checkOut = formatDate(booking.endDate);
   const rooms = formatRooms(booking.rooms);
 
-  await sendMail(
-    {
-      to: recipient,
-      subject: `Your Mamabooking request for ${hotelName} was accepted`,
-      text: [
-        `Hello ${guestName},`,
-        "",
-        `Good news! Your booking request for ${hotelName} has been accepted.`,
-        `Check-in: ${checkIn}`,
-        `Check-out: ${checkOut}`,
-        `Rooms: ${rooms}`,
-        `Total price: $${booking.totalPrice}`,
-        "",
-        "Thank you for booking with Mamabooking.",
-      ].join("\n"),
-      html: `
+  await sendMail({
+    to: recipient,
+    subject: `Your Mamabooking request for ${hotelName} was accepted`,
+    text: [
+      `Hello ${guestName},`,
+      "",
+      `Good news! Your booking request for ${hotelName} has been accepted.`,
+      `Check-in: ${checkIn}`,
+      `Check-out: ${checkOut}`,
+      `Rooms: ${rooms}`,
+      `Total price: $${booking.totalPrice}`,
+      "",
+      "Thank you for booking with Mamabooking.",
+    ].join("\n"),
+    html: `
         <p>Hello ${escapeHtml(guestName)},</p>
         <p>Good news! Your booking request for <strong>${escapeHtml(hotelName)}</strong> has been accepted.</p>
         <ul>
@@ -84,8 +99,7 @@ export const sendBookingAcceptedEmail = async (booking) => {
         </ul>
         <p>Thank you for booking with Mamabooking.</p>
       `,
-    }
-  );
+  });
 
   return { to: recipient };
 };
