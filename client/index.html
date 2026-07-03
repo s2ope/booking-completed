@@ -21,6 +21,8 @@
     </script>
     <script type="text/javascript">
       (function (c, l, a, r, i, t, y) {
+        if (!i || i.indexOf("%VITE_") === 0) return;
+
         c[a] =
           c[a] ||
           function () {
@@ -28,10 +30,16 @@
           };
         t = l.createElement(r);
         t.async = 1;
-        t.src = "https://www.clarity.ms/tag/" + i;
+        t.src = "https://www.clarity.ms/tag/" + encodeURIComponent(i);
         y = l.getElementsByTagName(r)[0];
         y.parentNode.insertBefore(t, y);
-      })(window, document, "clarity", "script", "x25t5n2ha4");
+      })(
+        window,
+        document,
+        "clarity",
+        "script",
+        "%VITE_CLARITY_PROJECT_ID%",
+      );
     </script>
   </head>
   <body>

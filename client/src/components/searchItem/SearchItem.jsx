@@ -2,12 +2,29 @@ import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import SaveHotelButton from "../saveHotelButton/SaveHotelButton";
 import { SearchContext } from "../../context/SearchContext";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const SearchItem = ({ item, searchState }) => {
   const navigate = useNavigate();
   const { dispatch } = useContext(SearchContext);
 
-  const openDetails = () => {
+  const trackOpenDetails = (source) => {
+    trackClarityEvent(
+      "property_details_opened",
+      {
+        clarity_open_source: source,
+        clarity_hotel_id: item._id,
+        clarity_price_per_night: item.cheapestPrice || "unknown",
+        clarity_rating_available: Boolean(item.rating),
+        clarity_search_context_available: Boolean(searchState),
+      },
+      source === "see_availability" ? "booking intent" : undefined,
+    );
+  };
+
+  const openDetails = (source = "property_card") => {
+    trackOpenDetails(source);
+
     if (searchState) {
       dispatch({ type: "NEW_SEARCH", payload: searchState });
       navigate(`/hotels/${item._id}`, { state: { search: searchState } });
@@ -20,12 +37,14 @@ const SearchItem = ({ item, searchState }) => {
   return (
     <div
       className="searchItem relative border border-lightgray p-2.5 rounded-md flex justify-between gap-5 mb-5 cursor-pointer hover:shadow-md transition-shadow"
-      onClick={openDetails}
+      onClick={() => openDetails("property_card")}
       role="button"
       tabIndex={0}
+      data-clarity-event="property_card_click"
+      data-clarity-label="Property card"
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
-          openDetails();
+          openDetails("property_card_keyboard");
         }
       }}
     >
@@ -71,9 +90,12 @@ const SearchItem = ({ item, searchState }) => {
           </span>
           <button
             className="siCheckButton bg-[#0071c2] text-white font-bold py-2.5 px-3 rounded-md border-none cursor-pointer"
+            data-clarity-event="see_availability_click"
+            data-clarity-label="See availability"
+            data-clarity-upgrade="booking intent"
             onClick={(event) => {
               event.stopPropagation();
-              openDetails();
+              openDetails("see_availability");
             }}
           >
             See availability

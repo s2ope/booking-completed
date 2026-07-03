@@ -1,9 +1,43 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
+import {
+  normalizeClarityEventName,
+  normalizeClarityValue,
+  sanitizeClarityPath,
+  trackClarityEvent,
+} from "../../utils/clarity";
 
-const INTERACTIVE_SELECTOR =
-  "button, a, [role='button'], input[type='button'], input[type='submit'], input[type='reset'], [data-clarity-click]";
-const DISABLED_SELECTOR = "button:disabled, [disabled], [aria-disabled='true']";
+const INTERACTIVE_SELECTOR = [
+  "button",
+  "a[href]",
+  "area[href]",
+  "summary",
+  "label",
+  "select",
+  "textarea",
+  "input:not([type='hidden'])",
+  "[role='button']",
+  "[role='link']",
+  "[role='menuitem']",
+  "[role='tab']",
+  "[role='checkbox']",
+  "[role='radio']",
+  "[role='switch']",
+  "[data-clarity-click]",
+  "[data-clarity-event]",
+].join(", ");
+
+const DISABLED_SELECTOR = [
+  "button:disabled",
+  "input:disabled",
+  "select:disabled",
+  "textarea:disabled",
+  "[disabled]",
+  "[aria-disabled='true']",
+].join(", ");
+
+const FORM_FIELD_TAGS = new Set(["input", "select", "textarea"]);
+const VALUE_LABEL_INPUT_TYPES = new Set(["button", "submit", "reset", "image"]);
 
 const RAGE_CLICK_COUNT = 3;
 const RAGE_CLICK_WINDOW_MS = 1600;
@@ -11,45 +45,82 @@ const DEAD_CLICK_CHECK_MS = 900;
 const QUICK_BACK_WINDOW_MS = 5000;
 const EXCESSIVE_SCROLL_WINDOW_MS = 6500;
 const EXCESSIVE_SCROLL_VIEWPORTS = 5;
+const MIN_SCROLLABLE_HEIGHT = 16;
+const STRICT_MODE_DUPLICATE_MS = 1000;
 const SCROLL_DEPTH_MARKS = [25, 50, 75, 90, 100];
 
-const normalizeValue = (value) =>
-  String(value ?? "unknown")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 120) || "unknown";
+const hashValue = (value) => {
+  const normalizedValue = normalizeClarityValue(value);
+  let hash = 0;
+
+  for (let index = 0; index < normalizedValue.length; index += 1) {
+    hash = (hash * 31 + normalizedValue.charCodeAt(index)) >>> 0;
+  }
+
+  return hash.toString(36);
+};
 
 const normalizeKeyPart = (value) =>
-  normalizeValue(value)
+  normalizeClarityValue(value)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
-    .slice(0, 60);
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60) || `u_${hashValue(value)}`;
 
 const getClosest = (target, selector) => {
   if (!target || typeof target.closest !== "function") return null;
   return target.closest(selector);
 };
 
-const getElementLabel = (element) =>
-  normalizeValue(
+const getInputType = (element) =>
+  normalizeClarityValue(element.getAttribute("type") || element.type || "text")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "") || "text";
+
+const getAssociatedLabel = (element) => {
+  if (!element.labels?.length) return null;
+
+  const labels = Array.from(element.labels)
+    .map((label) => label.innerText || label.textContent)
+    .filter(Boolean);
+
+  return labels[0] || null;
+};
+
+const getElementLabel = (element) => {
+  const tagName = element.tagName.toLowerCase();
+  const inputType = tagName === "input" ? getInputType(element) : null;
+  const safeInputValue =
+    inputType && VALUE_LABEL_INPUT_TYPES.has(inputType)
+      ? element.getAttribute("value")
+      : null;
+
+  return normalizeClarityValue(
     element.getAttribute("data-clarity-label") ||
       element.getAttribute("aria-label") ||
       element.getAttribute("title") ||
-      element.getAttribute("value") ||
+      safeInputValue ||
+      getAssociatedLabel(element) ||
+      element.getAttribute("placeholder") ||
       element.innerText ||
       element.textContent ||
       element.name ||
       element.id ||
       element.getAttribute("href") ||
+      inputType ||
       element.tagName,
   );
+};
 
 const getElementKind = (element) => {
   const tagName = element.tagName.toLowerCase();
+  const role = element.getAttribute("role");
 
-  if (tagName === "a") return "link";
-  if (tagName === "input") return element.type || "input";
-  if (element.getAttribute("role") === "button") return "role_button";
+  if (tagName === "a" || tagName === "area" || role === "link") return "link";
+  if (tagName === "input") return `input_${getInputType(element)}`;
+  if (tagName === "select" || tagName === "textarea") return tagName;
+  if (role) return `role_${normalizeKeyPart(role)}`;
+  if (tagName === "summary" || tagName === "label") return tagName;
 
   return "button";
 };
@@ -69,6 +140,24 @@ const getElementDetails = (element, pagePath) => {
   };
 };
 
+const getInteractionEventName = (details) => {
+  if (details.clarity_element_kind === "link") return "site_link_click";
+
+  if (
+    details.clarity_element_tag &&
+    FORM_FIELD_TAGS.has(details.clarity_element_tag)
+  ) {
+    return "site_form_interaction";
+  }
+
+  return "site_button_click";
+};
+
+const getCustomEventName = (element) => {
+  const eventName = element.getAttribute("data-clarity-event");
+  return eventName ? normalizeClarityEventName(eventName) : null;
+};
+
 const getDocumentHeight = () =>
   Math.max(
     document.body?.scrollHeight || 0,
@@ -81,40 +170,49 @@ const ClarityInteractionTracker = () => {
   const location = useLocation();
   const navigationType = useNavigationType();
   const clickHistoryRef = useRef(new Map());
-  const upgradedReasonsRef = useRef(new Set());
   const routeHistoryRef = useRef([]);
+  const lastPageViewRef = useRef(null);
+  const pendingDeadClickChecksRef = useRef(new Set());
 
   const pagePath = useMemo(
-    () => `${location.pathname}${location.search}${location.hash}`,
+    () =>
+      sanitizeClarityPath(
+        `${location.pathname}${location.search}${location.hash}`,
+      ),
     [location.hash, location.pathname, location.search],
   );
 
-  const sendClarityEvent = (eventName, tags = {}, upgradeReason) => {
-    if (typeof window === "undefined" || typeof window.clarity !== "function") {
+  const sendClarityEvent = useCallback(
+    (eventName, tags = {}, upgradeReason) => {
+      trackClarityEvent(eventName, tags, upgradeReason);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const now = Date.now();
+    const lastPageView = lastPageViewRef.current;
+
+    if (
+      lastPageView?.path === pagePath &&
+      lastPageView?.navigationType === navigationType &&
+      now - lastPageView.time <= STRICT_MODE_DUPLICATE_MS
+    ) {
       return;
     }
 
-    window.clarity("event", eventName);
-    window.clarity("set", "clarity_last_event", eventName);
+    lastPageViewRef.current = {
+      path: pagePath,
+      navigationType,
+      time: now,
+    };
 
-    Object.entries(tags).forEach(([key, value]) => {
-      window.clarity("set", key, normalizeValue(value));
-    });
-
-    if (upgradeReason && !upgradedReasonsRef.current.has(upgradeReason)) {
-      upgradedReasonsRef.current.add(upgradeReason);
-      window.clarity("upgrade", upgradeReason);
-    }
-  };
-
-  useEffect(() => {
     sendClarityEvent("site_page_view", {
       clarity_page_path: pagePath,
       clarity_navigation_type: navigationType,
       clarity_page_title: document.title,
     });
 
-    const now = Date.now();
     const history = routeHistoryRef.current;
     const previousRoute = history[history.length - 1];
     const routeBeforePrevious = history[history.length - 2];
@@ -140,7 +238,7 @@ const ClarityInteractionTracker = () => {
       ...history.slice(-4),
       { path: pagePath, time: now },
     ];
-  }, [navigationType, pagePath]);
+  }, [navigationType, pagePath, sendClarityEvent]);
 
   useEffect(() => {
     const trackRageClickCandidate = (details) => {
@@ -167,13 +265,14 @@ const ClarityInteractionTracker = () => {
     };
 
     const watchForDeadClickCandidate = (details) => {
-      if (typeof MutationObserver === "undefined") return;
+      if (typeof MutationObserver === "undefined" || !document.body) return;
 
       const beforeUrl = window.location.href;
       const beforeScrollX = window.scrollX;
       const beforeScrollY = window.scrollY;
       const beforeActiveElement = document.activeElement;
       let pageChanged = false;
+      let timeoutId;
 
       const observer = new MutationObserver(() => {
         pageChanged = true;
@@ -186,8 +285,19 @@ const ClarityInteractionTracker = () => {
         subtree: true,
       });
 
-      window.setTimeout(() => {
+      const cleanup = () => {
+        if (timeoutId) {
+          window.clearTimeout(timeoutId);
+        }
+
         observer.disconnect();
+        pendingDeadClickChecksRef.current.delete(cleanup);
+      };
+
+      pendingDeadClickChecksRef.current.add(cleanup);
+
+      timeoutId = window.setTimeout(() => {
+        cleanup();
 
         const navigated = window.location.href !== beforeUrl;
         const scrolled =
@@ -233,11 +343,11 @@ const ClarityInteractionTracker = () => {
 
       const details = getElementDetails(clickedElement, pagePath);
       const eventName =
-        details.clarity_element_kind === "link"
-          ? "site_link_click"
-          : "site_button_click";
+        getCustomEventName(clickedElement) || getInteractionEventName(details);
+      const upgradeReason =
+        clickedElement.getAttribute("data-clarity-upgrade") || undefined;
 
-      sendClarityEvent(eventName, details);
+      sendClarityEvent(eventName, details, upgradeReason);
       trackRageClickCandidate(details);
 
       if (details.clarity_element_kind !== "link") {
@@ -251,10 +361,14 @@ const ClarityInteractionTracker = () => {
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown, true);
       document.removeEventListener("click", handleClick, true);
+      Array.from(pendingDeadClickChecksRef.current).forEach((cleanup) =>
+        cleanup(),
+      );
     };
-  }, [pagePath]);
+  }, [pagePath, sendClarityEvent]);
 
   useEffect(() => {
+    let animationFrameId = null;
     const seenDepthMarks = new Set();
     const scrollState = {
       lastY: window.scrollY,
@@ -265,13 +379,18 @@ const ClarityInteractionTracker = () => {
 
     const handleScroll = () => {
       const now = Date.now();
-      const currentY = window.scrollY;
+      const currentY = Math.max(window.scrollY, 0);
       const viewportHeight = Math.max(window.innerHeight, 1);
       const documentHeight = Math.max(getDocumentHeight(), viewportHeight);
-      const scrollableHeight = Math.max(documentHeight - viewportHeight, 1);
+      const scrollableHeight = documentHeight - viewportHeight;
+
+      if (scrollableHeight <= MIN_SCROLLABLE_HEIGHT) {
+        return;
+      }
+
       const scrollDepth = Math.min(
         100,
-        Math.round(((currentY + viewportHeight) / documentHeight) * 100),
+        Math.round((currentY / scrollableHeight) * 100),
       );
 
       SCROLL_DEPTH_MARKS.forEach((mark) => {
@@ -310,13 +429,26 @@ const ClarityInteractionTracker = () => {
       }
     };
 
+    const scheduleHandleScroll = () => {
+      if (animationFrameId) return;
+
+      animationFrameId = window.requestAnimationFrame(() => {
+        animationFrameId = null;
+        handleScroll();
+      });
+    };
+
     handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", scheduleHandleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("scroll", scheduleHandleScroll);
+
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
     };
-  }, [pagePath]);
+  }, [pagePath, sendClarityEvent]);
 
   return null;
 };

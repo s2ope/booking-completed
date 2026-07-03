@@ -8,6 +8,7 @@ import SearchItem from "../../components/searchItem/SearchItem";
 import useFetch from "../../hooks/useFetch";
 import { showToast } from "../../helpers/ToastHelper";
 import { SearchContext } from "../../context/SearchContext";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const List = () => {
   const location = useLocation();
@@ -92,17 +93,44 @@ const List = () => {
   const validateSearch = () => {
     if (max && min && Number(max) < Number(min)) {
       showToast("Maximum price cannot be less than minimum price", "error");
+      trackClarityEvent("filter_search_invalid", {
+        clarity_search_source: "hotel_list",
+        clarity_invalid_reason: "max_less_than_min",
+      });
       return false;
     }
     if (searchOptions.adult < 1) {
       showToast("At least one adult is required", "error");
+      trackClarityEvent("filter_search_invalid", {
+        clarity_search_source: "hotel_list",
+        clarity_invalid_reason: "adult_count_below_minimum",
+      });
       return false;
     }
     if (searchOptions.room < 1) {
       showToast("At least one room is required", "error");
+      trackClarityEvent("filter_search_invalid", {
+        clarity_search_source: "hotel_list",
+        clarity_invalid_reason: "room_count_below_minimum",
+      });
       return false;
     }
     return true;
+  };
+
+  const getStayNights = () => {
+    const startDate = searchDates?.[0]?.startDate;
+    const endDate = searchDates?.[0]?.endDate;
+
+    if (!startDate || !endDate) return 0;
+
+    return Math.max(
+      Math.ceil(
+        Math.abs(new Date(endDate) - new Date(startDate)) /
+          (1000 * 60 * 60 * 24),
+      ),
+      1,
+    );
   };
 
   const handleSearch = async (e) => {
@@ -110,9 +138,27 @@ const List = () => {
 
     if (!validateSearch()) return;
 
+    trackClarityEvent("filter_search_submitted", {
+      clarity_search_source: "hotel_list",
+      clarity_destination_entered: Boolean(searchDestination.trim()),
+      clarity_property_type_selected: Boolean(searchPropertyType),
+      clarity_property_type: searchPropertyType || "none",
+      clarity_min_price_set: min !== undefined,
+      clarity_max_price_set: max !== undefined,
+      clarity_stay_nights: getStayNights(),
+      clarity_adult_count: searchOptions.adult,
+      clarity_children_count: searchOptions.children,
+      clarity_room_count: searchOptions.room,
+    });
+
     try {
       dispatch({ type: "NEW_SEARCH", payload: currentSearchState });
       const results = await reFetch();
+      trackClarityEvent("filter_search_results", {
+        clarity_search_source: "hotel_list",
+        clarity_result_count: results.length,
+        clarity_has_results: results.length > 0,
+      });
       if (results.length === 0) {
         showToast("No hotels found matching your criteria", "info");
       } else {
@@ -122,6 +168,10 @@ const List = () => {
         );
       }
     } catch (err) {
+      trackClarityEvent("filter_search_error", {
+        clarity_search_source: "hotel_list",
+        clarity_error_status: err.response?.status || "unknown",
+      });
       showToast("Error searching for hotels. Please try again.", "error");
     }
   };
@@ -296,6 +346,9 @@ const List = () => {
 
                 <button
                   type="submit"
+                  data-clarity-event="filter_search_button_click"
+                  data-clarity-label="Hotel list search"
+                  data-clarity-upgrade="search intent"
                   className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Search

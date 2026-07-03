@@ -10,6 +10,7 @@ import { DateRange } from "react-date-range";
 import { format } from "date-fns";
 import { SearchContext } from "../../context/SearchContext";
 import { AuthContext } from "../../context/AuthContext";
+import { trackClarityEvent } from "../../utils/clarity";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -45,9 +46,33 @@ const Header = ({ type }) => {
     }));
   };
 
+  const getStayNights = () => {
+    const startDate = dates?.[0]?.startDate;
+    const endDate = dates?.[0]?.endDate;
+
+    if (!startDate || !endDate) return 0;
+
+    return Math.max(
+      Math.ceil(
+        Math.abs(new Date(endDate) - new Date(startDate)) /
+          (1000 * 60 * 60 * 24),
+      ),
+      1,
+    );
+  };
+
   const handleSearch = () => {
     // ✅ normalize for case-insensitive search
     const normalizedDestination = destination.trim().toLowerCase();
+
+    trackClarityEvent("search_submitted", {
+      clarity_search_source: "home_header",
+      clarity_destination_entered: Boolean(normalizedDestination),
+      clarity_stay_nights: getStayNights(),
+      clarity_adult_count: options.adult,
+      clarity_children_count: options.children,
+      clarity_room_count: options.room,
+    });
 
     dispatch({
       type: "NEW_SEARCH",
@@ -68,6 +93,9 @@ const Header = ({ type }) => {
   };
 
   const handleSignInRegister = () => {
+    trackClarityEvent("sign_in_register_cta_click", {
+      clarity_cta_location: "home_header",
+    });
     navigate("/login");
   };
 
@@ -99,6 +127,8 @@ const Header = ({ type }) => {
                 <button
                   className="bg-[#0071c2] px-4 sm:px-6 py-2.5 font-medium rounded hover:bg-[#00487a] transition-colors text-sm sm:text-base"
                   onClick={handleSignInRegister}
+                  data-clarity-event="sign_in_register_cta_click"
+                  data-clarity-label="Home header sign in register"
                 >
                   Sign in / Register
                 </button>
@@ -224,6 +254,9 @@ const Header = ({ type }) => {
                   <button
                     className="bg-[#0071c2] w-full sm:w-auto px-4 sm:px-6 py-2 text-white font-medium rounded hover:bg-[#00487a] transition-colors"
                     onClick={handleSearch}
+                    data-clarity-event="search_button_click"
+                    data-clarity-label="Home header search"
+                    data-clarity-upgrade="search intent"
                   >
                     Search
                   </button>

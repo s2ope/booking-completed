@@ -18,6 +18,7 @@ import Navbar from "../../components/navbar/Navbar";
 import Header from "../../components/header/Header";
 import MailList from "../../components/mailList/MailList";
 import SaveHotelButton from "../../components/saveHotelButton/SaveHotelButton";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const Hotel = () => {
   const { id: hotelId } = useParams();
@@ -80,6 +81,11 @@ const Hotel = () => {
       : 1;
 
   const handleOpen = (i) => {
+    trackClarityEvent("hotel_photo_opened", {
+      clarity_hotel_id: hotelId,
+      clarity_photo_index: i,
+      clarity_photo_count: photos.length,
+    });
     setSlideNumber(i);
     setOpen(true);
   };
@@ -96,9 +102,29 @@ const Hotel = () => {
 
   const handleClick = () => {
     if (user) {
+      trackClarityEvent(
+        "booking_reserve_intent",
+        {
+          clarity_hotel_id: hotelId,
+          clarity_stay_nights: days,
+          clarity_room_count: roomCount,
+          clarity_user_signed_in: true,
+        },
+        "booking intent",
+      );
       setOpenModal(true);
       return;
     }
+
+    trackClarityEvent(
+      "booking_request_blocked",
+      {
+        clarity_hotel_id: hotelId,
+        clarity_blocked_reason: "unauthenticated",
+        clarity_user_signed_in: false,
+      },
+      "booking intent",
+    );
 
     Swal.fire({
       icon: "warning",
@@ -165,6 +191,9 @@ const Hotel = () => {
                   />
                   <button
                     onClick={handleClick}
+                    data-clarity-event="reserve_intent_click"
+                    data-clarity-label="Hotel header reserve"
+                    data-clarity-upgrade="booking intent"
                     className="px-5 py-2 bg-blue-600 text-white font-bold rounded-md cursor-pointer hover:bg-blue-700"
                   >
                     Reserve or Book Now!
@@ -215,6 +244,9 @@ const Hotel = () => {
                 </h2>
                 <button
                   onClick={handleClick}
+                  data-clarity-event="reserve_intent_click"
+                  data-clarity-label="Hotel price card reserve"
+                  data-clarity-upgrade="booking intent"
                   className="px-5 py-2 bg-blue-600 text-white font-bold rounded-md cursor-pointer hover:bg-blue-700"
                 >
                   Reserve or Book Now!

@@ -3,6 +3,7 @@ import { api } from "../../api/axios.js";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { showToast } from "../../helpers/ToastHelper";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -30,14 +31,24 @@ const ResetPassword = () => {
     setLoading(true);
 
     const { newPassword, confirmPassword } = passwords;
+    trackClarityEvent("password_reset_submit_attempt", {
+      clarity_auth_method: "reset_code",
+      clarity_reset_token_present: Boolean(searchParams.get("code")),
+    });
 
     if (newPassword !== confirmPassword) {
+      trackClarityEvent("password_reset_validation_error", {
+        clarity_validation_reason: "passwords_do_not_match",
+      });
       setValidationError("Passwords do not match");
       setLoading(false);
       return;
     }
 
     if (!validatePassword(newPassword)) {
+      trackClarityEvent("password_reset_validation_error", {
+        clarity_validation_reason: "weak_password",
+      });
       setValidationError(
         "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, and one number."
       );
@@ -53,13 +64,26 @@ const ResetPassword = () => {
       });
 
       if (response.status === 200) {
+        trackClarityEvent(
+          "password_reset_success",
+          {
+            clarity_auth_method: "reset_code",
+          },
+          "password reset success",
+        );
         showToast("Password reset successful! Redirecting to login...");
         setSuccess("Password reset successful! Redirecting to login...");
         setTimeout(() => navigate("/login"), 3000);
       } else {
+        trackClarityEvent("password_reset_error", {
+          clarity_error_status: response.status || "unknown",
+        });
         setServerError("Failed to reset password. Please try again.");
       }
     } catch (err) {
+      trackClarityEvent("password_reset_error", {
+        clarity_error_status: err.response?.status || "unknown",
+      });
       if (err.response) {
         setServerError(
           err.response.data.message ||
@@ -83,7 +107,11 @@ const ResetPassword = () => {
         <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
           Reset Password
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          data-clarity-mask="true"
+        >
           <div className="space-y-2">
             <input
               type="password"

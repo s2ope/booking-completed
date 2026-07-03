@@ -7,6 +7,7 @@ import Header from "../../components/header/Header";
 import { AuthContext } from "../../context/AuthContext";
 import { showToast } from "../../helpers/ToastHelper";
 import HomePayment from "../homePayment/homePayment";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const BookingDetails = () => {
   const { id } = useParams();
@@ -19,6 +20,7 @@ const BookingDetails = () => {
   const [canceling, setCanceling] = useState(false);
   const [paymentConfirming, setPaymentConfirming] = useState(false);
   const handledPaymentSessionRef = useRef("");
+  const reportedBookingViewRef = useRef("");
   const searchParams = useMemo(
     () => new URLSearchParams(location.search),
     [location.search]
@@ -51,6 +53,10 @@ const BookingDetails = () => {
   useEffect(() => {
     if (!user || searchParams.get("payment") !== "cancelled") return;
 
+    trackClarityEvent("payment_cancelled", {
+      clarity_payment_context: "booking",
+      clarity_booking_id_present: Boolean(id),
+    });
     showToast("Payment was cancelled. Your booking is still pending.", "warning");
     navigate(`/my-bookings/${id}`, { replace: true });
   }, [id, navigate, searchParams, user]);
@@ -59,6 +65,10 @@ const BookingDetails = () => {
     if (!user || !isPaymentSuccess) return;
 
     if (!stripeSessionId) {
+      trackClarityEvent("payment_confirm_error", {
+        clarity_payment_context: "booking",
+        clarity_error_status: "missing_session_id",
+      });
       setError("Stripe checkout session was not provided.");
       setLoading(false);
       return;
@@ -69,6 +79,10 @@ const BookingDetails = () => {
 
     const confirmPayment = async () => {
       setPaymentConfirming(true);
+      trackClarityEvent("payment_confirm_started", {
+        clarity_payment_context: "booking",
+        clarity_booking_id_present: Boolean(id),
+      });
       try {
         const response = await api.post(`/checkout/bookings/${id}/confirm`, {
           sessionId: stripeSessionId,
@@ -76,9 +90,22 @@ const BookingDetails = () => {
 
         setBooking(response.data);
         setError(null);
+        trackClarityEvent(
+          "payment_confirm_success",
+          {
+            clarity_payment_context: "booking",
+            clarity_booking_status: response.data?.status || "unknown",
+            clarity_payment_status: response.data?.paymentStatus || "unknown",
+            clarity_email_sent: response.data?.emailSent !== false,
+          },
+          "payment success",
+        );
         if (response.data?.emailSent === false) {
+          const emailError = response.data?.emailError
+            ? ` ${response.data.emailError}`
+            : "";
           showToast(
-            "Payment successful and booking confirmed, but the email could not be sent.",
+            `Payment successful and booking confirmed, but the email could not be sent.${emailError}`,
             "warning"
           );
         } else {
@@ -91,6 +118,10 @@ const BookingDetails = () => {
         }
         navigate(`/my-bookings/${id}`, { replace: true });
       } catch (err) {
+        trackClarityEvent("payment_confirm_error", {
+          clarity_payment_context: "booking",
+          clarity_error_status: err.response?.status || err.code || "unknown",
+        });
         const message =
           err.response?.data?.message ||
           (err.code === "ECONNABORTED"
@@ -103,6 +134,12 @@ const BookingDetails = () => {
             const bookingResponse = await api.get(`/bookings/${id}`);
             setBooking(bookingResponse.data);
             setError(null);
+            trackClarityEvent("payment_confirm_fallback_loaded", {
+              clarity_payment_context: "booking",
+              clarity_booking_status: bookingResponse.data?.status || "unknown",
+              clarity_payment_status:
+                bookingResponse.data?.paymentStatus || "unknown",
+            });
             showToast(message, "warning");
             navigate(`/my-bookings/${id}`, { replace: true });
           } catch {
@@ -122,13 +159,43 @@ const BookingDetails = () => {
     confirmPayment();
   }, [id, isPaymentSuccess, navigate, stripeSessionId, user]);
 
+  useEffect(() => {
+    if (!booking?._id || reportedBookingViewRef.current === booking._id) return;
+
+    reportedBookingViewRef.current = booking._id;
+    trackClarityEvent("booking_details_viewed", {
+      clarity_booking_id_present: true,
+      clarity_booking_status: booking.status || "unknown",
+      clarity_payment_status: booking.paymentStatus || "unknown",
+      clarity_room_count: booking.rooms?.length || 0,
+      clarity_total_price: booking.totalPrice || "unknown",
+    });
+  }, [booking]);
+
   const handleCancel = async () => {
     setCanceling(true);
+    trackClarityEvent("booking_cancel_submitted", {
+      clarity_cancel_source: "booking_details",
+      clarity_booking_id_present: Boolean(id),
+      clarity_booking_status: booking?.status || "unknown",
+    });
     try {
       const response = await api.patch(`/bookings/${id}/cancel`);
       setBooking(response.data);
+      trackClarityEvent(
+        "booking_cancel_success",
+        {
+          clarity_cancel_source: "booking_details",
+          clarity_booking_status: response.data?.status || "unknown",
+        },
+        "booking cancellation",
+      );
       showToast("Booking canceled successfully!", "success");
     } catch (err) {
+      trackClarityEvent("booking_cancel_error", {
+        clarity_cancel_source: "booking_details",
+        clarity_error_status: err.response?.status || "unknown",
+      });
       showToast(
         err.response?.data?.message || "Failed to cancel booking",
         "error"
@@ -188,6 +255,8 @@ const BookingDetails = () => {
       <div className="max-w-4xl mx-auto p-4">
         <button
           onClick={() => navigate("/my-bookings")}
+          data-clarity-event="back_to_bookings_click"
+          data-clarity-label="Back to my bookings"
           className="mb-4 text-blue-600 hover:underline"
         >
           Back to My Bookings
@@ -312,7 +381,10 @@ const BookingDetails = () => {
           </div>
 
           {booking.specialRequests && (
-            <div className="border-t border-gray-200 pt-6 mt-6">
+            <div
+              className="border-t border-gray-200 pt-6 mt-6"
+              data-clarity-mask="true"
+            >
               <h3 className="text-lg font-semibold mb-2">Special Requests</h3>
               <p className="text-gray-700">{booking.specialRequests}</p>
             </div>
@@ -329,6 +401,9 @@ const BookingDetails = () => {
               <button
                 onClick={handleCancel}
                 disabled={canceling}
+                data-clarity-event="booking_cancel_click"
+                data-clarity-label="Cancel booking"
+                data-clarity-upgrade="booking cancellation"
                 className="bg-red-500 disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-red-600 text-white px-4 py-2 rounded"
               >
                 {canceling ? "Canceling..." : "Cancel Booking"}

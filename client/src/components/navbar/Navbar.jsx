@@ -15,6 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import { showToast } from "../../helpers/ToastHelper";
+import { trackClarityEvent } from "../../utils/clarity";
 
 // Logo Component
 const Logo = ({ className = "" }) => {
@@ -67,6 +68,9 @@ const Navbar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const handleLogout = () => {
+    trackClarityEvent("logout_click", {
+      clarity_auth_method: "local_session",
+    });
     dispatch({ type: "LOGOUT" });
     showToast("Logged out successfully!", "success");
     setIsOpen(false);
@@ -162,6 +166,8 @@ const Navbar = () => {
                     ))}
                     <button
                       onClick={handleLogout}
+                      data-clarity-event="logout_click"
+                      data-clarity-label="Navbar sign out"
                       className="flex w-full items-center px-3 py-1.5 text-xs text-red-600 hover:bg-gray-100"
                     >
                       <LogOut className="h-3 w-3 mr-2" />
@@ -190,12 +196,16 @@ const Navbar = () => {
 
                 <Link
                   to="/register"
+                  data-clarity-event="register_nav_click"
+                  data-clarity-label="Navbar register"
                   className="bg-white text-[#01357F] px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition-colors"
                 >
                   Register
                 </Link>
                 <Link
                   to="/login"
+                  data-clarity-event="login_nav_click"
+                  data-clarity-label="Navbar login"
                   className="bg-white text-[#01357F] px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition-colors"
                 >
                   Login
@@ -224,6 +234,8 @@ const Navbar = () => {
               ))}
               <button
                 onClick={handleLogout}
+                data-clarity-event="logout_click"
+                data-clarity-label="Mobile navbar sign out"
                 className="flex w-full items-center text-white px-2 py-1.5 rounded text-sm hover:bg-[#01357F]"
               >
                 <LogOut className="h-3 w-3 mr-2" />
@@ -234,6 +246,8 @@ const Navbar = () => {
             <div className="px-2 pt-1.5 pb-2 space-y-1">
               <Link
                 to="/register"
+                data-clarity-event="register_nav_click"
+                data-clarity-label="Mobile navbar register"
                 className="block bg-white text-[#01357F] px-2 py-1.5 rounded text-sm text-center"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -241,6 +255,8 @@ const Navbar = () => {
               </Link>
               <Link
                 to="/login"
+                data-clarity-event="login_nav_click"
+                data-clarity-label="Mobile navbar login"
                 className="block bg-white text-[#01357F] px-2 py-1.5 rounded text-sm text-center"
                 onClick={() => setIsMobileMenuOpen(false)}
               >

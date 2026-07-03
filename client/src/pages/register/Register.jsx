@@ -4,6 +4,7 @@ import { AuthContext } from "../../context/AuthContext";
 import Navbar from "../../components/navbar/Navbar";
 import { showToast } from "../../helpers/ToastHelper";
 import { api } from "../../api/axios.js";
+import { trackClarityEvent } from "../../utils/clarity";
 
 import { GoogleLogin } from "@react-oauth/google";
 
@@ -41,15 +42,24 @@ const Register = () => {
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
 
     if (!usernameRegex.test(username)) {
-      return "Username must be 3-15 characters long.";
+      return {
+        message: "Username must be 3-15 characters long.",
+        reason: "invalid_username",
+      };
     }
 
     if (!emailRegex.test(email)) {
-      return "Invalid email format.";
+      return {
+        message: "Invalid email format.",
+        reason: "invalid_email",
+      };
     }
 
     if (!passwordRegex.test(password)) {
-      return "Password must be strong (uppercase, lowercase, number, 8+ chars).";
+      return {
+        message: "Password must be strong (uppercase, lowercase, number, 8+ chars).",
+        reason: "weak_password",
+      };
     }
 
     return null;
@@ -60,9 +70,19 @@ const Register = () => {
     e.preventDefault();
     setValidationError(null);
 
+    trackClarityEvent("register_attempt", {
+      clarity_auth_method: "password",
+      clarity_user_role: credentials.role,
+    });
+
     const validationError = validateInputs();
     if (validationError) {
-      setValidationError(validationError);
+      trackClarityEvent("register_validation_error", {
+        clarity_auth_method: "password",
+        clarity_user_role: credentials.role,
+        clarity_validation_reason: validationError.reason,
+      });
+      setValidationError(validationError.message);
       return;
     }
 
@@ -80,6 +100,14 @@ const Register = () => {
 
       dispatch({ type: "REGISTER_SUCCESS" });
 
+      trackClarityEvent(
+        "register_success",
+        {
+          clarity_auth_method: "password",
+          clarity_user_role: credentials.role,
+        },
+        "register success",
+      );
       showToast(res.data?.message || "Registration successful!", "success");
 
       navigate("/login");
@@ -89,6 +117,11 @@ const Register = () => {
 
       dispatch({ type: "REGISTER_FAILURE", payload: message });
 
+      trackClarityEvent("register_error", {
+        clarity_auth_method: "password",
+        clarity_user_role: credentials.role,
+        clarity_error_status: err.response?.status || "unknown",
+      });
       showToast(message, "error");
     }
   };
@@ -96,6 +129,9 @@ const Register = () => {
   // GOOGLE REGISTER / LOGIN
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
+      trackClarityEvent("register_attempt", {
+        clarity_auth_method: "google",
+      });
       dispatch({ type: "REGISTER_START" });
 
       const res = await api.post("/auth/google", {
@@ -107,10 +143,21 @@ const Register = () => {
         payload: res.data.details,
       });
 
+      trackClarityEvent(
+        "register_success",
+        {
+          clarity_auth_method: "google",
+        },
+        "register success",
+      );
       showToast("Google signup/login successful!", "success");
 
       navigate("/");
     } catch (err) {
+      trackClarityEvent("register_error", {
+        clarity_auth_method: "google",
+        clarity_error_status: err.response?.status || "unknown",
+      });
       showToast(
         err.response?.data?.message || "Google authentication failed",
         "error",
@@ -124,6 +171,10 @@ const Register = () => {
   };
 
   const handleGoogleError = () => {
+    trackClarityEvent("register_error", {
+      clarity_auth_method: "google",
+      clarity_error_status: "google_widget_error",
+    });
     showToast("Google signup failed!", "error");
   };
 
@@ -131,14 +182,25 @@ const Register = () => {
   const handleVerification = async (e) => {
     e.preventDefault();
 
+    trackClarityEvent("email_verification_attempt", {
+      clarity_auth_method: "email_code",
+    });
+
     try {
       const res = await api.post("/auth/verify-email", {
         token: verificationToken,
       });
 
+      trackClarityEvent("email_verification_success", {
+        clarity_auth_method: "email_code",
+      });
       showToast(res.data, "success");
       navigate("/login");
     } catch (err) {
+      trackClarityEvent("email_verification_error", {
+        clarity_auth_method: "email_code",
+        clarity_error_status: err.response?.status || "unknown",
+      });
       showToast(err.response?.data?.message || "Verification failed", "error");
     }
   };
@@ -163,7 +225,11 @@ const Register = () => {
 
           {/* EMAIL REGISTER */}
           {!isVerificationStep ? (
-            <form onSubmit={handleClick} className="space-y-4">
+            <form
+              onSubmit={handleClick}
+              className="space-y-4"
+              data-clarity-mask="true"
+            >
               <input
                 type="text"
                 placeholder="username"
@@ -204,6 +270,8 @@ const Register = () => {
               <button
                 disabled={loading}
                 type="submit"
+                data-clarity-event="register_button_click"
+                data-clarity-label="Register form submit"
                 className="w-full bg-blue-600 text-white py-2 rounded-md"
               >
                 Register
@@ -211,7 +279,11 @@ const Register = () => {
             </form>
           ) : (
             // VERIFICATION
-            <form onSubmit={handleVerification} className="space-y-4">
+            <form
+              onSubmit={handleVerification}
+              className="space-y-4"
+              data-clarity-mask="true"
+            >
               <input
                 type="text"
                 placeholder="Verification Code"

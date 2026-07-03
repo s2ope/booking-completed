@@ -5,6 +5,7 @@ import Header from "../../components/header/Header";
 import Navbar from "../../components/navbar/Navbar";
 import { AuthContext } from "../../context/AuthContext";
 import { showToast } from "../../helpers/ToastHelper";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const MyAccount = () => {
   const { user, dispatch } = useContext(AuthContext);
@@ -25,12 +26,18 @@ const MyAccount = () => {
       try {
         const response = await api.get("/users/me");
         setProfile(response.data);
+        trackClarityEvent("account_viewed", {
+          clarity_profile_loaded: true,
+        });
         setForm({
           phone: response.data.phone || "",
           city: response.data.city || "",
           country: response.data.country || "",
         });
       } catch (err) {
+        trackClarityEvent("account_load_error", {
+          clarity_error_status: err.response?.status || "unknown",
+        });
         setError(err.response?.data?.message || "Could not load your account.");
       } finally {
         setLoading(false);
@@ -47,6 +54,11 @@ const MyAccount = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSaving(true);
+    trackClarityEvent("account_update_submitted", {
+      clarity_phone_entered: Boolean(form.phone.trim()),
+      clarity_city_entered: Boolean(form.city.trim()),
+      clarity_country_entered: Boolean(form.country.trim()),
+    });
     try {
       const response = await api.put("/users/me", form);
       setProfile(response.data);
@@ -54,8 +66,14 @@ const MyAccount = () => {
         type: "LOGIN_SUCCESS",
         payload: { ...user, ...response.data },
       });
+      trackClarityEvent("account_update_success", {
+        clarity_profile_updated: true,
+      });
       showToast("Account updated successfully.", "success");
     } catch (err) {
+      trackClarityEvent("account_update_error", {
+        clarity_error_status: err.response?.status || "unknown",
+      });
       showToast(err.response?.data?.message || "Could not update account.", "error");
     } finally {
       setSaving(false);
@@ -82,6 +100,7 @@ const MyAccount = () => {
           <form
             onSubmit={handleSubmit}
             className="space-y-5 rounded-md bg-white p-6 shadow-sm"
+            data-clarity-mask="true"
           >
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <label className="block">
@@ -146,6 +165,8 @@ const MyAccount = () => {
             <button
               type="submit"
               disabled={saving}
+              data-clarity-event="account_update_click"
+              data-clarity-label="Save account changes"
               className="rounded-md bg-blue-600 px-5 py-2 font-medium text-white hover:bg-blue-700 disabled:bg-gray-400"
             >
               {saving ? "Saving..." : "Save Changes"}

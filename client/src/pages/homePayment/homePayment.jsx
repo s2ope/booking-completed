@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../../api/axios.js";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const formatPrice = (value) => `$${Number(value || 0).toFixed(2)}`;
 
@@ -14,6 +15,15 @@ export default function HomePayment({ booking, embedded = false }) {
     try {
       setLoading(true);
       setError("");
+      trackClarityEvent(
+        "payment_checkout_started",
+        {
+          clarity_payment_context: isBookingPayment ? "booking" : "premium_plan",
+          clarity_booking_id_present: isBookingPayment,
+          clarity_amount: amount,
+        },
+        "payment intent",
+      );
 
       const response = isBookingPayment
         ? await api.post(`/checkout/bookings/${booking._id}/session`)
@@ -28,8 +38,21 @@ export default function HomePayment({ booking, embedded = false }) {
         throw new Error("Checkout URL was not returned from the server.");
       }
 
+      trackClarityEvent(
+        "payment_checkout_redirect",
+        {
+          clarity_payment_context: isBookingPayment ? "booking" : "premium_plan",
+          clarity_booking_id_present: isBookingPayment,
+          clarity_amount: amount,
+        },
+        "payment intent",
+      );
       window.location.href = data.url;
     } catch (err) {
+      trackClarityEvent("payment_checkout_error", {
+        clarity_payment_context: isBookingPayment ? "booking" : "premium_plan",
+        clarity_error_status: err.response?.status || "unknown",
+      });
       setError(
         err.response?.data?.message ||
           err.message ||
@@ -60,6 +83,11 @@ export default function HomePayment({ booking, embedded = false }) {
           type="button"
           onClick={handleCheckout}
           disabled={loading}
+          data-clarity-event="payment_checkout_click"
+          data-clarity-label={
+            isBookingPayment ? "Booking payment checkout" : "Premium checkout"
+          }
+          data-clarity-upgrade="payment intent"
           style={{
             ...styles.button,
             opacity: loading ? 0.7 : 1,

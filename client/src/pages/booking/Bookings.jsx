@@ -6,6 +6,7 @@ import Navbar from "../../components/navbar/Navbar";
 import Header from "../../components/header/Header";
 import { showToast } from "../../helpers/ToastHelper";
 import { AuthContext } from "../../context/AuthContext";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -24,8 +25,16 @@ const MyBookings = () => {
     const fetchBookings = async () => {
       try {
         const response = await api.get("/bookings/get");
-        setBookings(Array.isArray(response.data) ? response.data : []);
+        const nextBookings = Array.isArray(response.data) ? response.data : [];
+        setBookings(nextBookings);
+        trackClarityEvent("booking_list_viewed", {
+          clarity_booking_count: nextBookings.length,
+          clarity_has_bookings: nextBookings.length > 0,
+        });
       } catch (err) {
+        trackClarityEvent("booking_list_error", {
+          clarity_error_status: err?.response?.status || "unknown",
+        });
         setError(err?.response?.data?.message || "Failed to fetch bookings");
       } finally {
         setLoading(false);
@@ -37,6 +46,10 @@ const MyBookings = () => {
 
   const handleCancelBooking = async (bookingId) => {
     setCancelingBookingId(bookingId);
+    trackClarityEvent("booking_cancel_submitted", {
+      clarity_cancel_source: "booking_list",
+      clarity_booking_id_present: Boolean(bookingId),
+    });
     try {
       const response = await api.patch(`/bookings/${bookingId}/cancel`);
 
@@ -45,8 +58,20 @@ const MyBookings = () => {
           booking._id === bookingId ? response.data : booking
         )
       );
+      trackClarityEvent(
+        "booking_cancel_success",
+        {
+          clarity_cancel_source: "booking_list",
+          clarity_booking_status: response.data?.status || "unknown",
+        },
+        "booking cancellation",
+      );
       showToast("Booking canceled successfully!", "success");
     } catch (error) {
+      trackClarityEvent("booking_cancel_error", {
+        clarity_cancel_source: "booking_list",
+        clarity_error_status: error?.response?.status || "unknown",
+      });
       showToast(
         error?.response?.data?.message || "Failed to cancel booking",
         "error"
@@ -148,7 +173,17 @@ const MyBookings = () => {
                   <div className="flex flex-wrap gap-3">
                     <button
                       className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                      onClick={() => navigate(`/my-bookings/${booking._id}`)}
+                      data-clarity-event="booking_details_click"
+                      data-clarity-label="View booking details"
+                      onClick={() => {
+                        trackClarityEvent("booking_details_click", {
+                          clarity_click_source: "booking_list",
+                          clarity_booking_status: booking.status || "unknown",
+                          clarity_payment_status:
+                            booking.paymentStatus || "unknown",
+                        });
+                        navigate(`/my-bookings/${booking._id}`);
+                      }}
                     >
                       View Details
                     </button>
@@ -161,6 +196,9 @@ const MyBookings = () => {
                         } text-white px-4 py-2 rounded`}
                         onClick={() => handleCancelBooking(booking._id)}
                         disabled={cancelingBookingId === booking._id}
+                        data-clarity-event="booking_cancel_click"
+                        data-clarity-label="Cancel booking from list"
+                        data-clarity-upgrade="booking cancellation"
                       >
                         {cancelingBookingId === booking._id
                           ? "Canceling..."

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../api/axios.js";
 
 import { showToast } from "../../helpers/ToastHelper";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const EnterResetCode = () => {
   const [resetCode, setResetCode] = useState("");
@@ -14,8 +15,15 @@ const EnterResetCode = () => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    trackClarityEvent("reset_code_verification_attempt", {
+      clarity_auth_method: "reset_code",
+      clarity_reset_code_present: Boolean(resetCode.trim()),
+    });
 
     if (!resetCode || resetCode.trim().length === 0) {
+      trackClarityEvent("reset_code_verification_error", {
+        clarity_error_status: "empty_code",
+      });
       showToast("Reset code cannot be empty.");
       setError("Reset code cannot be empty.");
       setLoading(false);
@@ -28,12 +36,21 @@ const EnterResetCode = () => {
       });
 
       if (response.status === 200) {
+        trackClarityEvent("reset_code_verification_success", {
+          clarity_auth_method: "reset_code",
+        });
         navigate(`/reset-password?code=${resetCode}`);
       } else {
+        trackClarityEvent("reset_code_verification_error", {
+          clarity_error_status: response.status || "invalid_code",
+        });
         showToast("Invalid reset code.");
         setError("Invalid reset code.");
       }
     } catch (err) {
+      trackClarityEvent("reset_code_verification_error", {
+        clarity_error_status: err.response?.status || "unknown",
+      });
       if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else {
@@ -52,7 +69,11 @@ const EnterResetCode = () => {
           Enter the Reset Code Sent to Your Email
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          data-clarity-mask="true"
+        >
           <input
             type="text"
             placeholder="Reset Code"

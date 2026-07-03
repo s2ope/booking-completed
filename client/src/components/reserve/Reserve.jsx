@@ -1,13 +1,14 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleXmark } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useFetch from "../../hooks/useFetch";
 import { SearchContext } from "../../context/SearchContext";
 import { AuthContext } from "../../context/AuthContext";
 import { api } from "../../api/axios.js";
 import { showToast } from "../../helpers/ToastHelper";
+import { trackClarityEvent } from "../../utils/clarity";
 
 const Reserve = ({ setOpen, hotelId, searchState }) => {
   const [selectedRooms, setSelectedRooms] = useState([]);
@@ -99,18 +100,49 @@ const Reserve = ({ setOpen, hotelId, searchState }) => {
     0
   );
 
+  useEffect(() => {
+    trackClarityEvent(
+      "booking_reserve_modal_viewed",
+      {
+        clarity_hotel_id: hotelId,
+        clarity_stay_nights: stayDates.length,
+        clarity_room_type_count: rooms.length,
+      },
+      "booking intent",
+    );
+  }, [hotelId, rooms.length, stayDates.length]);
+
   const handleClick = async () => {
     if (!user) {
+      trackClarityEvent("booking_request_blocked", {
+        clarity_hotel_id: hotelId,
+        clarity_blocked_reason: "unauthenticated",
+      });
       navigate("/login", { state: { from: location.pathname } });
       return;
     }
 
     if (selectedRooms.length === 0) {
+      trackClarityEvent("booking_request_blocked", {
+        clarity_hotel_id: hotelId,
+        clarity_blocked_reason: "no_room_selected",
+      });
       showToast("Please select at least one room.", "warning");
       return;
     }
 
     setSubmitting(true);
+    trackClarityEvent(
+      "booking_request_submitted",
+      {
+        clarity_hotel_id: hotelId,
+        clarity_selected_room_count: selectedRooms.length,
+        clarity_stay_nights: stayDates.length,
+        clarity_total_price: totalPrice,
+        clarity_special_requests_present: Boolean(specialRequests.trim()),
+      },
+      "booking request",
+    );
 
     try {
       const response = await api.post("/bookings/create", {
@@ -121,10 +153,26 @@ const Reserve = ({ setOpen, hotelId, searchState }) => {
         specialRequests,
       });
 
+      trackClarityEvent(
+        "booking_request_success",
+        {
+          clarity_hotel_id: hotelId,
+          clarity_selected_room_count: selectedRooms.length,
+          clarity_stay_nights: stayDates.length,
+          clarity_total_price: totalPrice,
+          clarity_booking_created: Boolean(response.data?._id),
+        },
+        "booking request",
+      );
       setOpen(false);
       showToast("Booking request submitted. The hotel will review it soon.", "success");
       navigate(`/my-bookings/${response.data._id}`);
     } catch (err) {
+      trackClarityEvent("booking_request_error", {
+        clarity_hotel_id: hotelId,
+        clarity_selected_room_count: selectedRooms.length,
+        clarity_error_status: err.response?.status || "unknown",
+      });
       showToast(
         err.response?.data?.message ||
           "Failed to complete booking. Please try again.",
@@ -208,6 +256,7 @@ const Reserve = ({ setOpen, hotelId, searchState }) => {
             value={specialRequests}
             onChange={(event) => setSpecialRequests(event.target.value)}
             placeholder="Special requests"
+            data-clarity-mask="true"
             className="w-full min-h-20 rounded-md border border-gray-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -219,6 +268,9 @@ const Reserve = ({ setOpen, hotelId, searchState }) => {
             <button
               onClick={handleClick}
               disabled={submitting || selectedRooms.length === 0}
+              data-clarity-event="booking_request_button_click"
+              data-clarity-label="Request booking"
+              data-clarity-upgrade="booking request"
               className="rButton bg-[#0071c2] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold cursor-pointer rounded-md px-6 py-2"
             >
               {submitting ? "Sending request..." : "Request Booking"}
